@@ -15,7 +15,7 @@ from models.game.enums import LifeStage, Intensity, Difficulty
 import bleach
 from typing import Tuple, List
 from models.game.base import Ocean, Trait, Skill
-from models.game.story_ai import story_begin
+from models.game.story_ai import story_begin, continue_story
 import asyncio
 
 game_bp = Blueprint('game', __name__)
@@ -110,7 +110,6 @@ def load_life(life_id):
         logger.error(f"Error in load_life: {str(e)}")
         return redirect(url_for('game.lives'))
 
-
 @game_bp.route('/game/delete_life/<life_id>', methods=['POST'])
 @login_required
 def delete_life(life_id):
@@ -134,7 +133,6 @@ def delete_life(life_id):
     except Exception as e:
         logger.error(f"Error deleting life: {str(e)}")
         return jsonify({'success': False, 'error': str(e)}), 500
-
 
 def validate_new_life_data(form_data) -> Tuple[bool, List[str]]:
     """Validate new life form data and return (is_valid, error_messages)"""
@@ -174,7 +172,6 @@ def validate_new_life_data(form_data) -> Tuple[bool, List[str]]:
         errors.append('Custom directions must be 250 characters or less')
     
     return (len(errors) == 0, errors)
-
 
 @game_bp.route('/game/new_life', methods=['GET', 'POST'])
 @login_required
@@ -244,9 +241,6 @@ def new_life():
 @game_bp.route('/game/new_story', methods=['POST'])
 @login_required
 def new_story():
-    logger.info(f"Headers received: {dict(request.headers)}")
-    logger.info(f"CSRF token from form: {request.form.get('csrf_token')}")
-    logger.info(f"CSRF token from headers: {request.headers.get('X-CSRFToken')}")
     try:
         user = get_current_user()
         if not user:
@@ -257,15 +251,21 @@ def new_story():
         if not current_life:
             return jsonify({'error': 'No active life'}), 400
 
-        # Get story beginning directly (not awaiting)
+        # Check if there's an active story
+        existing_story = Story.get_by_life_id(current_life._id)
+        if existing_story and not existing_story.completed:
+            return jsonify({'error': 'There is already an active story'}), 400
+
+        # Get story beginning
         story_response = story_begin(current_life)
 
         # Create new story object
         story = Story(
             life_id=current_life._id,
-            prompt="TODO: Save the actual prompt here",
+            prompt="Starting new story",  # We might want to store the actual prompt later
             beats=[(story_response.story_text, None)],
-            current_options=story_response.options
+            current_options=story_response.options,
+            completed=story_response.completed
         )
         story.save()
 
@@ -276,4 +276,64 @@ def new_story():
 
     except Exception as e:
         logger.error(f"Error creating new story: {str(e)}")
-        return jsonify({'error': 'Failed to create story'}), 500
+        return jsonify({'error': str(e)}), 500
+
+@game_bp.route('/game/story/choose', methods=['POST'])
+@login_required
+def choose_option():
+    try:
+        data = request.get_json()
+        if not data or 'option_index' not in data:
+            return jsonify({'error': 'Missing option index'}), 400
+
+        user = get_current_user()
+        if not user:
+            return jsonify({'error': 'Not logged in'}), 401
+
+        db_session = Session.get_by_session_id(session['session_id'])
+        current_life = get_current_life(db_session)
+        if not current_life:
+            return jsonify({'error': 'No active life'}), 400
+
+        # Get current story
+        story = Story.get_by_life_id(current_life._id)
+        if not story:
+            return jsonify({'error': 'No active story'}), 400
+
+        if story.completed:
+            return jsonify({'error': 'Story is already completed'}), 400
+
+        # Validate option index
+        option_index = int(data['option_index'])
+        if option_index < 0 or option_index >= len(story.current_options):
+            return jsonify({'error': 'Invalid option index'}), 400
+
+        selected_option = story.current_options[option_index]
+
+        # Record the player's choice
+        story.add_player_response(selected_option)
+
+        # Get next story beat
+        story_response = continue_story(current_life, story, selected_option)
+
+        if story_response.completed:
+            # If story is complete, add final beat without options
+            story.conclude_story(story_response.story_text)
+        else:
+            # Add new beat with options
+            story.add_story_beat(
+                story_response.story_text,
+                story_response.options,
+                story_response.completed
+            )
+
+        # Return rendered partial template
+        return render_template('game/partials/story.html', 
+                             story=story,
+                             csrf_token=generate_csrf())
+
+    except ValueError as e:
+        return jsonify({'error': str(e)}), 400
+    except Exception as e:
+        logger.error(f"Error processing story choice: {str(e)}")
+        return jsonify({'error': str(e)}), 500

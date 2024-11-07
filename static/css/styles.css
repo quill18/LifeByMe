@@ -771,3 +771,99 @@ input[type="password"] {
     margin-top: 1rem;
 }
 
+.story-complete {
+    margin-top: 2rem;
+    text-align: center;
+}
+
+.story-complete .button {
+    margin: 1rem auto;
+}
+
+/* Add to ./static/css/styles.css */
+
+/* Story Option Styling */
+.story-option {
+    width: 100%;
+    text-align: left;
+    margin-bottom: 0.5rem;
+    padding: 1rem;
+    background-color: var(--light-gray);
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    transition: all 0.2s ease;
+}
+
+.story-option:hover:not(.disabled) {
+    background-color: var(--medium-gray);
+    transform: translateY(-1px);
+}
+
+.story-option.disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+}
+
+/* Loading State */
+.loading {
+    text-align: center;
+    padding: 2rem;
+    color: var(--secondary-color);
+    animation: pulse 1.5s infinite;
+}
+
+@keyframes pulse {
+    0% { opacity: 0.6; }
+    50% { opacity: 1; }
+    100% { opacity: 0.6; }
+}
+
+/* Error Message */
+.error-message {
+    margin-top: 1rem;
+    padding: 1rem;
+    background-color: #fff3f3;
+    border: 1px solid var(--danger-color);
+    border-radius: 4px;
+    color: var(--danger-color);
+    text-align: center;
+}
+
+.error-message button {
+    margin-top: 1rem;
+}
+
+/* Story Container */
+.story-container {
+    max-width: 800px;
+    margin: 0 auto;
+}
+
+.story-text {
+    font-size: 1.1em;
+    line-height: 1.6;
+    margin-bottom: 2rem;
+    white-space: pre-line; /* Preserve line breaks from AI response */
+}
+
+.story-options {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+/* Story Complete State */
+.story-complete {
+    text-align: center;
+    padding: 2rem 0;
+}
+
+/* Transitions */
+.story-container {
+    animation: fadeIn 0.3s ease-in;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}

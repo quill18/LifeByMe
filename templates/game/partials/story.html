@@ -4,11 +4,17 @@
         {{ story.beats[-1][0] | safe }}
     </div>
     
-    <div class="story-options">
-        {% for option in story.current_options %}
-        <button class="story-option button" data-option="{{ loop.index0 }}">
-            {{ option }}
-        </button>
-        {% endfor %}
-    </div>
+    {% if not story.completed %}
+        <div class="story-options">
+            {% for option in story.current_options %}
+            <button class="story-option button" data-option="{{ loop.index0 }}">
+                {{ option }}
+            </button>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="story-complete">
+            <button class="button primary new-story-button">Start New Story</button>
+        </div>
+    {% endif %}
 </div>
