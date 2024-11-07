@@ -1,0 +1,14 @@
+<!-- ./templates/game/partials/story.html -->
+<div class="story-container">
+    <div class="story-text">
+        {{ story.beats[-1][0] | safe }}
+    </div>
+    
+    <div class="story-options">
+        {% for option in story.current_options %}
+        <button class="story-option button" data-option="{{ loop.index0 }}">
+            {{ option }}
+        </button>
+        {% endfor %}
+    </div>
+</div>

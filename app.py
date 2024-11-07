@@ -23,26 +23,37 @@ csrf = CSRFProtect(app)
 if not os.path.exists('logs'):
     os.mkdir('logs')
 
+# Configure logging at the root logger level
+logging.basicConfig(
+    level=logging.INFO,
+    format=Config.LOG_FORMAT,
+    datefmt=Config.LOG_DATE_FORMAT,
+    handlers=[
+        # File handler with rotation
+        RotatingFileHandler(
+            Config.LOG_FILE,
+            maxBytes=10240000,  # 10MB
+            backupCount=10
+        ),
+        # Console handler
+        logging.StreamHandler()
+    ]
+)
+
+# Get the root logger
+logger = logging.getLogger()
+
+# Set the level for all loggers
+logger.setLevel(logging.INFO)
+
+# Make sure all handlers have the right formatter
 formatter = logging.Formatter(
     fmt=Config.LOG_FORMAT,
     datefmt=Config.LOG_DATE_FORMAT
 )
 
-file_handler = RotatingFileHandler(
-    Config.LOG_FILE,
-    maxBytes=10240000,  # 10MB
-    backupCount=10
-)
-file_handler.setFormatter(formatter)
-file_handler.setLevel(logging.INFO)
-
-console_handler = logging.StreamHandler()
-console_handler.setFormatter(formatter)
-console_handler.setLevel(logging.INFO)
-
-app.logger.addHandler(file_handler)
-app.logger.addHandler(console_handler)
-app.logger.setLevel(logging.INFO)
+for handler in logger.handlers:
+    handler.setFormatter(formatter)
 
 app.logger.info('LifeByMe startup')
 

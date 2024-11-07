@@ -15,7 +15,8 @@ from models.game.enums import LifeStage, Intensity, Difficulty
 import bleach
 from typing import Tuple, List
 from models.game.base import Ocean, Trait, Skill
-
+from models.game.story_ai import story_begin
+import asyncio
 
 game_bp = Blueprint('game', __name__)
 logger = logging.getLogger(__name__)
@@ -78,36 +79,61 @@ def lives():
 @game_bp.route('/game/load_life/<life_id>')
 @login_required
 def load_life(life_id):
-    user = get_current_user()
-    if not user:
-        return redirect(url_for('auth.login'))
-    
-    life = Life.get_by_id(ObjectId(life_id))
-    if not life or life.user_id != user._id:
+    try:
+        user = get_current_user()
+        if not user:
+            logger.error("No user found in session")
+            return redirect(url_for('auth.login'))
+        
+        life = Life.get_by_id(ObjectId(life_id))
+        if not life:
+            logger.error(f"Life {life_id} not found")
+            return redirect(url_for('game.lives'))
+            
+        if life.user_id != user._id:
+            logger.error(f"Life {life_id} does not belong to user {user._id}")
+            return redirect(url_for('game.lives'))
+        
+        # Update session with new life
+        db_session = Session.get_by_session_id(session['session_id'])
+        if not db_session:
+            logger.error("No database session found")
+            return redirect(url_for('auth.login'))
+        
+        logger.info(f"Updating session {db_session.session_id} with life {life_id}")
+        db_session.update_current_life(life._id)  
+        logger.info("Successfully updated current life")
+        
+        return redirect(url_for('game.game'))
+        
+    except Exception as e:
+        logger.error(f"Error in load_life: {str(e)}")
         return redirect(url_for('game.lives'))
-    
-    # Update session with new life
-    db_session = Session.get_by_session_id(session['session_id'])
-    db_session.update_current_life(life._id)
-    
-    return redirect(url_for('game.game'))
+
 
 @game_bp.route('/game/delete_life/<life_id>', methods=['POST'])
 @login_required
 def delete_life(life_id):
-    user = get_current_user()
-    if not user:
-        return jsonify({'success': False, 'error': 'Not logged in'})
-    
-    life = Life.get_by_id(ObjectId(life_id))
-    if not life or life.user_id != user._id:
-        return jsonify({'success': False, 'error': 'Life not found'})
-    
-    # Delete the life
-    # TODO: Implement delete method in Life class
-    life.delete()
-    
-    return jsonify({'success': True})
+    try:
+        user = get_current_user()
+        if not user:
+            return jsonify({'success': False, 'error': 'Not logged in'}), 401
+        
+        life = Life.get_by_id(ObjectId(life_id))
+        if not life:
+            return jsonify({'success': False, 'error': 'Life not found'}), 404
+            
+        if life.user_id != user._id:
+            return jsonify({'success': False, 'error': 'Not authorized'}), 403
+        
+        # Delete the life and all associated data
+        life.delete()
+        
+        return jsonify({'success': True})
+        
+    except Exception as e:
+        logger.error(f"Error deleting life: {str(e)}")
+        return jsonify({'success': False, 'error': str(e)}), 500
 
 
 def validate_new_life_data(form_data) -> Tuple[bool, List[str]]:
@@ -214,3 +240,40 @@ def new_life():
                              errors=['An error occurred while creating your new life'],
                              form_data=form_data,
                              csrf_token=generate_csrf())
+
+@game_bp.route('/game/new_story', methods=['POST'])
+@login_required
+def new_story():
+    logger.info(f"Headers received: {dict(request.headers)}")
+    logger.info(f"CSRF token from form: {request.form.get('csrf_token')}")
+    logger.info(f"CSRF token from headers: {request.headers.get('X-CSRFToken')}")
+    try:
+        user = get_current_user()
+        if not user:
+            return jsonify({'error': 'Not logged in'}), 401
+
+        db_session = Session.get_by_session_id(session['session_id'])
+        current_life = get_current_life(db_session)
+        if not current_life:
+            return jsonify({'error': 'No active life'}), 400
+
+        # Get story beginning directly (not awaiting)
+        story_response = story_begin(current_life)
+
+        # Create new story object
+        story = Story(
+            life_id=current_life._id,
+            prompt="TODO: Save the actual prompt here",
+            beats=[(story_response.story_text, None)],
+            current_options=story_response.options
+        )
+        story.save()
+
+        # Return rendered partial template
+        return render_template('game/partials/story.html', 
+                             story=story,
+                             csrf_token=generate_csrf())
+
+    except Exception as e:
+        logger.error(f"Error creating new story: {str(e)}")
+        return jsonify({'error': 'Failed to create story'}), 500

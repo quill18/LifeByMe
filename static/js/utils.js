@@ -82,9 +82,12 @@ const CSRFToken = {
 
     addTokenToHeaders: (headers = {}) => {
         const token = CSRFToken.getToken();
-        if (token) {
-            headers['X-CSRFToken'] = token;
-        }
-        return headers;
+        // Create a new headers object explicitly
+        const newHeaders = {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': token
+        };
+        console.log('Created headers:', newHeaders);  // Debug log
+        return newHeaders;
     }
 };

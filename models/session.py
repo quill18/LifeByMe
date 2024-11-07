@@ -6,6 +6,10 @@ from bson import ObjectId
 from pymongo import MongoClient
 from config import Config
 from .utils import validate_object_id, DatabaseError
+import logging
+
+logger = logging.getLogger(__name__)
+
 
 client = MongoClient(Config.MONGO_URI)
 db = client[Config.DB_NAME]
@@ -138,20 +142,27 @@ class Session:
         """Update the current life ID for this session"""
         if isinstance(life_id, str):
             life_id = validate_object_id(life_id)
-            
+                
         try:
             result = sessions.update_one(
                 {'session_id': self.session_id},
                 {
                     '$set': {
-                        'current_life_id': life_id
+                        'current_life_id': life_id,
+                        'last_accessed': datetime.utcnow()
                     }
                 }
             )
-            if not result.modified_count:
-                raise DatabaseError("Failed to update current life")
+            # Check if document was found, not just if it was modified
+            if result.matched_count == 0:
+                raise DatabaseError("Session not found")
+            
+            # Update the instance variables
             self.current_life_id = life_id
+            self.last_accessed = datetime.utcnow()
+            
         except Exception as e:
+            logger.error(f"Error updating current life: {str(e)}")
             raise DatabaseError(f"Database error: {str(e)}")
 
     def delete(self) -> None:

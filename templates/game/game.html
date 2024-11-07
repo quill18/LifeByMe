@@ -1,7 +1,12 @@
 <!-- ./templates/game/game.html -->
 {% extends "master.html" %}
 
+{% block extra_head %}
+<script src="{{ url_for('static', filename='js/game.js') }}"></script>
+{% endblock %}
+
 {% block content %}
+
 <div class="game-container">
     <div class="left-column">
         <div class="character-info">
@@ -42,7 +47,7 @@
     
     <div class="center-column">
         {% if story %}
-            {# Story display will go here #}
+            {% include 'game/partials/story.html' %}
         {% else %}
             <div class="no-story">
                 <p>Ready to continue your journey?</p>

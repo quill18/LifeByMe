@@ -142,3 +142,26 @@ class Life:
 
         # Save changes
         self.save()
+
+    def delete(self) -> None:
+        """Delete life and all associated data from database"""
+        try:
+            # Delete associated data first
+            from .memory import memories
+            from .character import characters
+            from .story import stories
+            
+            # Delete all associated memories
+            memories.delete_many({'life_id': self._id})
+            
+            # Delete all associated characters
+            characters.delete_many({'life_id': self._id})
+            
+            # Delete all associated stories
+            stories.delete_many({'life_id': self._id})
+            
+            # Finally delete the life itself
+            lives.delete_one({'_id': self._id})
+            
+        except Exception as e:
+            raise DatabaseError(f"Error deleting life: {str(e)}")        

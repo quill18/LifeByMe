@@ -721,3 +721,53 @@ input[type="password"] {
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
     letter-spacing: 0.2em;
 }
+
+/* Add to ./static/css/styles.css */
+
+/* Story Styles */
+.story-container {
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+}
+
+.story-text {
+    font-size: 1.1em;
+    line-height: 1.6;
+}
+
+.story-options {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.story-option {
+    text-align: left;
+    padding: 1rem;
+    background-color: var(--light-gray);
+    transition: background-color 0.2s;
+}
+
+.story-option:hover {
+    background-color: var(--medium-gray);
+}
+
+/* Loading State */
+.loading {
+    text-align: center;
+    padding: 2rem;
+    color: var(--secondary-color);
+}
+
+/* Error Message */
+.error-message {
+    text-align: center;
+    padding: 2rem;
+    color: var(--danger-color);
+}
+
+.error-message button {
+    margin-top: 1rem;
+}
+
