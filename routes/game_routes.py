@@ -15,7 +15,7 @@ from models.game.enums import LifeStage, Intensity, Difficulty
 import bleach
 from typing import Tuple, List
 from models.game.base import Ocean, Trait, Skill
-from models.game.story_ai import story_begin, continue_story, conclude_story
+from models.game.story_ai import begin_story, continue_story, conclude_story
 import asyncio
 
 game_bp = Blueprint('game', __name__)
@@ -257,7 +257,7 @@ def new_story():
             return jsonify({'error': 'There is already an active story'}), 400
 
         # Get story beginning
-        story_response = story_begin(current_life)
+        story_response = begin_story(current_life)
 
         # Create new story object
         story = Story(
@@ -265,7 +265,7 @@ def new_story():
             prompt="Starting new story",  # We might want to store the actual prompt later
             beats=[(story_response.story_text, None)],
             current_options=story_response.options,
-            completed=story_response.completed
+            completed=False
         )
         story.save()
 
@@ -316,21 +316,17 @@ def choose_option():
         # Get next story beat
         if len(story.beats) >= 3:
             story_response = conclude_story(current_life, story, selected_option)
-        else:
-            story_response = continue_story(current_life, story, selected_option)
-
-        print(story_response)
-
-        if story_response.completed:
-            # If story is complete, add final beat without options
             story.conclude_story(story_response.story_text)
         else:
+            story_response = continue_story(current_life, story, selected_option)
             # Add new beat with options
             story.add_story_beat(
                 story_response.story_text,
                 story_response.options,
-                story_response.completed
+                False
             )
+
+        print(story_response)
 
         # Return rendered partial template
         return render_template('game/partials/story.html', 
