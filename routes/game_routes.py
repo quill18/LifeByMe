@@ -314,7 +314,7 @@ def choose_option():
         story.add_player_response(selected_option)
 
         # Get next story beat
-        if len(story.beats) >= 3:
+        if len(story.beats) >= 2:
             story_response = conclude_story(current_life, story, selected_option)
             story.conclude_story(story_response.story_text)
         else:

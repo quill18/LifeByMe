@@ -11,10 +11,26 @@
     <div class="left-column">
         <div class="character-info">
             <h2>{{ life.name }}</h2>
-            <p>Age: {{ life.age }}</p>
-            <p>Life Stage: {{ life.life_stage.value }}</p>
+            <div class="character-metadata">
+                <div class="metadata-item">
+                    <span class="metadata-label">Difficulty:</span>
+                    <span class="metadata-value">{{ life.difficulty.value }}</span>
+                </div>
+                <div class="metadata-item">
+                    <span class="metadata-label">Intensity:</span>
+                    <span class="metadata-value">{{ life.intensity.value }}</span>
+                </div>
+                <div class="metadata-item">
+                    <span class="metadata-label">Age:</span>
+                    <span class="metadata-value">{{ life.age }}</span>
+                </div>
+                <div class="metadata-item">
+                    <span class="metadata-label">Life Stage:</span>
+                    <span class="metadata-value">{{ life.life_stage.value }}</span>
+                </div>
+            </div>
         </div>
-        
+                
         <div class="ocean-traits">
             <h3>Core Traits</h3>
             <div class="trait">
@@ -41,9 +57,12 @@
         
         <div class="stress-info">
             <h3>Current Stress</h3>
-            <div class="stress-value">{{ life.current_stress }}</div>
+            <div class="stress-value" 
+                 data-stress-level="{% if life.current_stress > 70 %}high{% elif life.current_stress > 40 %}medium{% endif %}">
+                {{ life.current_stress }}
+            </div>
         </div>
-    </div>
+            </div>
     
     <div class="center-column">
         {% if story %}

@@ -103,6 +103,7 @@ def begin_story(life: Life) -> StoryResponse:
         raise
     except Exception as e:
         logger.error(f"Error generating story: {str(e)}")
+        print(result)
         raise
 
 
@@ -352,9 +353,9 @@ Story Beginning Guidelines:
 - Avoid starting with internal monologue
 
 Your response must use the provided function to return:
-- A clear story text describing the initial situation. If {life.name} is highly stressed (> 70), the situation should reflect that and feel more challenging.
-- You must include 3 distinct response options that {life.name} could take. Make options feel meaningfully different and could lead the story in different directions. Options that align with {life.name}'s traits may feel comfortable and reduce stress. Options that conflict with {life.name}'s traits may provide opportunites for change, but could cause stress.
-- Include at least one option that correlates to {life.name}'s personality and at least one option that conflicts with {life.name}'s personality."""
+- A clear story_text describing the initial situation. If {life.name} is highly stressed (> 70), the situation should reflect that and feel more challenging.
+- Separate from the story_text, also return 3 distinct response options that {life.name} could take. Make options feel meaningfully different and could lead the story in different directions. Options that align with {life.name}'s traits may feel comfortable and reduce stress. Options that conflict with {life.name}'s traits may provide opportunites for change, but could cause stress. Include at least one option that correlates to {life.name}'s personality and at least one option that conflicts with {life.name}'s personality.
+- DO NOT mentioning the options in the main story_text as it would be redundant"""
 
     return base_prompt + begin_specific
 
@@ -369,11 +370,11 @@ Story Continuation Guidelines:
 - Keep the narrative flowing smoothly
 - Consider previous story beats when crafting the response
 - Maintain consistent characterization
-- Keep in mind that the story will be concluded after the third player response
 
 Your response must use the provided function to return:
-- Story text describing what happened based on the previous choice made
-- Include 3 distinct response options that {life.name} could take. Make options feel meaningfully different and include a mix of options that both align with and run counter to various personality traits"""
+- A clear story_text describing what happened based on the previous choice made
+- Separate from the story_text, also return 3 distinct response options that {life.name} could take. Make options feel meaningfully different and include a mix of options that both align with and run counter to various personality traits. Include one option that seems less likely to 'successfully' resolve the situation, but leans more heavily into the player characters's traits in a way that might reduce stress.
+- DO NOT mentioning the options in the main story_text as it would be redundant"""
     return base_prompt + continue_specific
 
 
