@@ -15,7 +15,7 @@ from models.game.enums import LifeStage, Intensity, Difficulty
 import bleach
 from typing import Tuple, List
 from models.game.base import Ocean, Trait, Skill
-from models.game.story_ai import story_begin, continue_story
+from models.game.story_ai import story_begin, continue_story, conclude_story
 import asyncio
 
 game_bp = Blueprint('game', __name__)
@@ -314,7 +314,12 @@ def choose_option():
         story.add_player_response(selected_option)
 
         # Get next story beat
-        story_response = continue_story(current_life, story, selected_option)
+        if len(story.beats) >= 3:
+            story_response = conclude_story(current_life, story, selected_option)
+        else:
+            story_response = continue_story(current_life, story, selected_option)
+
+        print(story_response)
 
         if story_response.completed:
             # If story is complete, add final beat without options

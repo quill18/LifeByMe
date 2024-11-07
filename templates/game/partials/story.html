@@ -1,20 +1,38 @@
 <!-- ./templates/game/partials/story.html -->
 <div class="story-container">
-    <div class="story-text">
-        {{ story.beats[-1][0] | safe }}
+    <div class="story-scroll">
+        {% for beat, response in story.beats[:-1] %}
+        <div class="story-beat">
+            <div class="story-text">
+                {{ beat | safe }}
+            </div>
+            {% if response %}
+            <div class="selected-response">
+                {{ response }}
+            </div>
+            {% endif %}
+        </div>
+        {% endfor %}
+        
+        <!-- Current beat -->
+        <div class="story-beat current">
+            <div class="story-text">
+                {{ story.beats[-1][0] | safe }}
+            </div>
+        </div>
     </div>
     
     {% if not story.completed %}
-        <div class="story-options">
-            {% for option in story.current_options %}
-            <button class="story-option button" data-option="{{ loop.index0 }}">
-                {{ option }}
-            </button>
-            {% endfor %}
-        </div>
+    <div class="story-options">
+        {% for option in story.current_options %}
+        <button class="story-option button" data-option="{{ loop.index0 }}">
+            {{ option }}
+        </button>
+        {% endfor %}
+    </div>
     {% else %}
-        <div class="story-complete">
-            <button class="button primary new-story-button">Start New Story</button>
-        </div>
+    <div class="story-complete">
+        <button class="button primary new-story-button">Start New Story</button>
+    </div>
     {% endif %}
 </div>

@@ -43,6 +43,12 @@ document.addEventListener('DOMContentLoaded', () => {
             // Replace content with new story HTML
             const htmlContent = await response.text();
             centerColumn.innerHTML = htmlContent;
+
+            // Scroll the story area to the top for new stories
+            const storyScroll = document.querySelector('.story-scroll');
+            if (storyScroll) {
+                storyScroll.scrollTop = 0;
+            }
             
         } catch (error) {
             console.error('Error starting new story:', error);
@@ -100,8 +106,11 @@ document.addEventListener('DOMContentLoaded', () => {
             const htmlContent = await response.text();
             centerColumn.innerHTML = htmlContent;
 
-            // Scroll to the top of the new content
-            centerColumn.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            // Scroll the story area to the bottom
+            const storyScroll = document.querySelector('.story-scroll');
+            if (storyScroll) {
+                storyScroll.scrollTop = storyScroll.scrollHeight;
+            }
 
         } catch (error) {
             console.error('Error processing choice:', error);
