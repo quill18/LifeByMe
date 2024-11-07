@@ -1,0 +1,115 @@
+<!-- ./templates/game/new_life.html -->
+{% extends "master.html" %}
+
+{% block extra_head %}
+<script src="{{ url_for('static', filename='js/new_life.js') }}"></script>
+{% endblock %}
+
+{% block content %}
+<div class="new-life-container">
+    <h2>Create Your New Life</h2>
+    
+    <form id="newLifeForm" action="{{ url_for('game.new_life') }}" method="post">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+        
+        <div class="form-group">
+            <label for="name">Name</label>
+            <input type="text" id="name" name="name" maxlength="50" required>
+            <div class="character-count"><span id="nameCount">0</span>/50</div>
+        </div>
+
+        <div class="form-group">
+            <label>Gender</label>
+            <div class="gender-options">
+                <label class="radio-option-horizontal" for="genderFemale">
+                    <input type="radio" id="genderFemale" name="gender" value="Female" required>
+                    <span>Female</span>
+                </label>
+                <label class="radio-option-horizontal" for="genderMale">
+                    <input type="radio" id="genderMale" name="gender" value="Male">
+                    <span>Male</span>
+                </label>
+                <label class="radio-option-horizontal" for="genderNonBinary">
+                    <input type="radio" id="genderNonBinary" name="gender" value="Non-Binary">
+                    <span>Non-Binary</span>
+                </label>
+                <label class="radio-option-horizontal" for="genderCustom">
+                    <input type="radio" id="genderCustom" name="gender" value="Custom">
+                    <span>Custom</span>
+                </label>
+            </div>
+        </div>
+                
+        <div class="form-group" id="customGenderGroup" style="display: none;">
+            <label for="customGender">Custom Gender</label>
+            <input type="text" id="customGender" name="custom_gender" maxlength="50">
+            <div class="character-count"><span id="genderCount">0</span>/50</div>
+        </div>
+
+        <div class="form-group">
+            <label>Intensity Level</label>
+            <div class="radio-group">
+                <div class="radio-option">
+                    <input type="radio" id="intensityLight" name="intensity" value="LIGHT" required>
+                    <label for="intensityLight">
+                        <strong>LIGHT</strong>
+                        <span>Idealized. Family-friendly. Avoids anything remotely triggering.</span>
+                    </label>
+                </div>
+                <div class="radio-option">
+                    <input type="radio" id="intensityModerate" name="intensity" value="MODERATE">
+                    <label for="intensityModerate">
+                        <strong>MODERATE</strong>
+                        <span>The level of a prime-time family drama TV show with the occasional serious bits.</span>
+                    </label>
+                </div>
+                <div class="radio-option">
+                    <input type="radio" id="intensityGritty" name="intensity" value="GRITTY">
+                    <label for="intensityGritty">
+                        <strong>GRITTY</strong>
+                        <span>Serious real-world issues and emotional challenges.</span>
+                    </label>
+                </div>
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label>Difficulty Level</label>
+            <div class="radio-group">
+                <div class="radio-option">
+                    <input type="radio" id="difficultyStory" name="difficulty" value="STORY" required>
+                    <label for="difficultyStory">
+                        <strong>STORY</strong>
+                        <span>I want to mostly "succeed" at challenges, just in different ways.</span>
+                    </label>
+                </div>
+                <div class="radio-option">
+                    <input type="radio" id="difficultyBalanced" name="difficulty" value="BALANCED">
+                    <label for="difficultyBalanced">
+                        <strong>BALANCED</strong>
+                        <span>Things won't always go right, but that can be fun.</span>
+                    </label>
+                </div>
+                <div class="radio-option">
+                    <input type="radio" id="difficultyChallenge" name="difficulty" value="CHALLENGING">
+                    <label for="difficultyChallenge">
+                        <strong>CHALLENGING</strong>
+                        <span>Life is difficult, but how you deal with it is the goal.</span>
+                    </label>
+                </div>
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label for="customDirections">Custom Directions (Optional)</label>
+            <textarea id="customDirections" name="custom_directions" maxlength="250" rows="3"></textarea>
+            <div class="character-count"><span id="directionsCount">0</span>/250</div>
+        </div>
+
+        <div class="form-actions">
+            <button type="submit" class="button primary">Begin Your Journey</button>
+            <a href="{{ url_for('game.lives') }}" class="button secondary">Cancel</a>
+        </div>
+    </form>
+</div>
+{% endblock %}

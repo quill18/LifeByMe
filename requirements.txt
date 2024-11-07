@@ -1,0 +1,8 @@
+# ./requirements.txt
+
+Flask==2.3.3
+Flask-WTF==1.1.1
+pymongo==4.6.1
+Werkzeug==2.3.7
+python-dateutil==2.8.2
+bleach==6.0.0

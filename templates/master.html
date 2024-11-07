@@ -1,0 +1,51 @@
+<!-- ./templates/master.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LifeByMe{% if title %} - {{ title }}{% endif %}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+    <script src="{{ url_for('static', filename='js/utils.js') }}"></script>
+    {% block extra_head %}{% endblock %}
+</head>
+<body>
+    <div class="container">
+        <!-- Navigation -->
+        <nav>
+            {% if session.session_id %}
+                {% include 'nav_logged_in.html' %}
+            {% else %}
+                {% include 'nav_logged_out.html' %}
+            {% endif %}
+        </nav>
+
+        <!-- Error/Success Messages -->
+        {% if errors %}
+        <div class="error-container">
+            <ul class="errors">
+                {% for error in errors %}
+                <li>{{ error }}</li>
+                {% endfor %}
+            </ul>
+        </div>
+        {% endif %}
+
+        {% if success_message %}
+        <div class="success-container">
+            <p class="success">{{ success_message }}</p>
+        </div>
+        {% endif %}
+
+        <!-- Main Content -->
+        <main>
+            {% block content %}{% endblock %}
+        </main>
+
+        <!-- Footer -->
+        <footer>
+            <p>&copy; 2024 LifeByMe</p>
+        </footer>
+    </div>
+</body>
+</html>

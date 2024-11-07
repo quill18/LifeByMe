@@ -1,0 +1,35 @@
+<!-- ./templates/register.html -->
+{% extends "master.html" %}
+
+{% block extra_head %}
+<script src="{{ url_for('static', filename='js/auth.js') }}"></script>
+{% endblock %}
+
+{% block content %}
+<div class="auth-container">
+    <h2>Register</h2>
+    <form action="{{ url_for('auth.register') }}" method="post" class="auth-form" id="registerForm">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+        <div class="form-group">
+            <label for="username">Username</label>
+            <input type="text" id="username" name="username" required>
+        </div>
+        <div class="form-group">
+            <label for="password">Password</label>
+            <input type="password" id="password" name="password" required>
+        </div>
+        <div class="form-group">
+            <label for="password_confirm">Confirm Password</label>
+            <input type="password" id="password_confirm" name="password_confirm" required>
+        </div>
+        <div class="form-group">
+            <label for="openai_api_key">OpenAI API Key (Optional)</label>
+            <input type="text" id="openai_api_key" name="openai_api_key">
+        </div>
+        <button type="submit" class="button primary">Register</button>
+    </form>
+    <p class="auth-alternate">
+        Already have an account? <a href="{{ url_for('auth.login') }}">Login</a>
+    </p>
+</div>
+{% endblock %}

@@ -1,0 +1,46 @@
+<!-- ./templates/settings.html -->
+{% extends "master.html" %}
+
+{% block extra_head %}
+<script src="{{ url_for('static', filename='js/user.js') }}"></script>
+{% endblock %}
+
+{% block content %}
+<div class="settings-container">
+    <h2>User Settings</h2>
+    
+    <section class="settings-section">
+        <h3>Change Password</h3>
+        <form action="{{ url_for('user.change_password') }}" method="post" class="settings-form" id="passwordForm">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+            <div class="form-group">
+                <label for="current_password">Current Password</label>
+                <input type="password" id="current_password" name="current_password" required>
+            </div>
+            <div class="form-group">
+                <label for="new_password">New Password</label>
+                <input type="password" id="new_password" name="new_password" required>
+            </div>
+            <div class="form-group">
+                <label for="new_password_confirm">Confirm New Password</label>
+                <input type="password" id="new_password_confirm" name="new_password_confirm" required>
+            </div>
+            <button type="submit" class="button primary">Change Password</button>
+        </form>
+    </section>
+
+    <section class="settings-section">
+        <h3>OpenAI API Key</h3>
+        <form action="{{ url_for('user.update_api_key') }}" method="post" class="settings-form" id="apiKeyForm">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+            <div class="form-group">
+                <label for="openai_api_key">API Key</label>
+                <input type="text" id="openai_api_key" name="openai_api_key" 
+                       value="{{ user.openai_api_key or '' }}"
+                       placeholder="Enter your OpenAI API key">
+            </div>
+            <button type="submit" class="button primary">Update API Key</button>
+        </form>
+    </section>
+</div>
+{% endblock %}

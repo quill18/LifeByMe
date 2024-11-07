@@ -1,0 +1,7 @@
+logs/
+.git/
+__pycache__/
+venv/
+.env
+stories/
+LifeByMe_*

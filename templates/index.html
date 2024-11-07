@@ -1,0 +1,20 @@
+<!-- ./templates/index.html -->
+{% extends "master.html" %}
+
+{% block content %}
+<div class="welcome-container">
+    <h1>Welcome to LifeByMe</h1>
+    {% if not session.session_id %}
+    <p>Create your own unique life story in this AI-powered life simulation game.</p>
+    <div class="cta-buttons">
+        <a href="{{ url_for('auth.register') }}" class="button primary">Get Started</a>
+        <a href="{{ url_for('auth.login') }}" class="button secondary">Login</a>
+    </div>
+    {% else %}
+    <p>Continue your journey...</p>
+    <div class="cta-buttons">
+        <a href="{{ url_for('game.game') }}" class="button primary">Play Now</a>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

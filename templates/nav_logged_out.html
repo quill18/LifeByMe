@@ -1,0 +1,10 @@
+<!-- ./templates/nav_logged_out.html -->
+<div class="nav-container">
+    <div class="nav-left">
+        <a href="{{ url_for('index') }}" class="nav-brand">LifeByMe</a>
+    </div>
+    <div class="nav-right">
+        <a href="{{ url_for('auth.login') }}" class="nav-link">Login</a>
+        <a href="{{ url_for('auth.register') }}" class="nav-link">Register</a>
+    </div>
+</div>
