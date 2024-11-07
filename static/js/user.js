@@ -75,3 +75,10 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     
 });
+
+// Add key press handler to prevent form submission when toggling visibility
+document.addEventListener('keydown', (event) => {
+    if (event.key === 'Enter' && event.target.classList.contains('toggle-visibility')) {
+        event.preventDefault();
+    }
+});
