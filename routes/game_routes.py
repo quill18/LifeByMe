@@ -14,6 +14,8 @@ from bson import ObjectId
 from models.game.enums import LifeStage, Intensity, Difficulty
 import bleach
 from typing import Tuple, List
+from models.game.base import Ocean, Trait, Skill
+
 
 game_bp = Blueprint('game', __name__)
 logger = logging.getLogger(__name__)
@@ -160,29 +162,39 @@ def new_life():
                              csrf_token=generate_csrf())
 
     # Process POST request
+    form_data = {
+        'name': request.form.get('name', '').strip(),
+        'gender': request.form.get('gender', ''),
+        'custom_gender': request.form.get('custom_gender', '').strip(),
+        'intensity': request.form.get('intensity', ''),
+        'difficulty': request.form.get('difficulty', ''),
+        'custom_directions': request.form.get('custom_directions', '').strip()
+    }
+    
     is_valid, errors = validate_new_life_data(request.form)
     
     if not is_valid:
         return render_template('game/new_life.html',
                              errors=errors,
+                             form_data=form_data,
                              csrf_token=generate_csrf())
-
+    
     try:
         # Create new life
         life = Life(
             user_id=user._id,
-            name=bleach.clean(request.form['name'].strip()),
-            age=14,  # Starting high school age
+            name=bleach.clean(form_data['name']),
+            age=16,  # High School Junior
             life_stage=LifeStage.HIGH_SCHOOL,
-            gender=bleach.clean(request.form['gender']),
-            custom_gender=bleach.clean(request.form.get('custom_gender', '').strip()) if request.form['gender'] == 'Custom' else None,
-            intensity=Intensity[request.form['intensity']],
-            difficulty=Difficulty[request.form['difficulty']],
-            custom_directions=bleach.clean(request.form.get('custom_directions', '').strip()),
+            gender=bleach.clean(form_data['gender']),
+            custom_gender=bleach.clean(form_data['custom_gender']) if form_data['gender'] == 'Custom' else None,
+            intensity=Intensity[form_data['intensity']],
+            difficulty=Difficulty[form_data['difficulty']],
+            custom_directions=bleach.clean(form_data['custom_directions']),
             current_employment=None,
-            ocean=Ocean(),  # Initialize with default values
-            traits=[],      # Start with empty traits
-            skills=[],      # Start with empty skills
+            ocean=Ocean(),
+            traits=[],
+            skills=[],
             current_stress=0
         )
         
@@ -200,4 +212,5 @@ def new_life():
         logger.error(f"Error creating new life: {str(e)}")
         return render_template('game/new_life.html',
                              errors=['An error occurred while creating your new life'],
+                             form_data=form_data,
                              csrf_token=generate_csrf())

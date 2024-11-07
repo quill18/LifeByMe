@@ -50,4 +50,28 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
     }
+
+        // API Key visibility toggle
+        const apiKeyInput = document.getElementById('openai_api_key');
+        const toggleButton = document.querySelector('.toggle-visibility');
+        
+        if (toggleButton && apiKeyInput) {
+            toggleButton.addEventListener('click', () => {
+                // Toggle input type
+                const isPassword = apiKeyInput.type === 'password';
+                apiKeyInput.type = isPassword ? 'text' : 'password';
+                
+                // Toggle icon
+                const eyeIcon = toggleButton.querySelector('.eye-icon');
+                eyeIcon.classList.toggle('eye-closed');
+                
+                // Update aria-label for accessibility
+                toggleButton.setAttribute('aria-label', 
+                    isPassword ? 'Hide API key' : 'Show API key');
+            });
+    
+            // Ensure input starts as password type
+            apiKeyInput.type = 'password';
+        }
+    
 });

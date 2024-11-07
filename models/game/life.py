@@ -5,7 +5,6 @@ from typing import Dict, List, Optional
 from bson import ObjectId
 from dataclasses import dataclass, field
 from pymongo import MongoClient
-
 from config import Config
 from .enums import LifeStage, Intensity, Difficulty
 from .base import Ocean, Trait, Skill
@@ -43,6 +42,11 @@ class Life:
             'user_id': self.user_id,
             'name': self.name,
             'age': self.age,
+            'gender': self.gender,
+            'custom_gender': self.custom_gender,
+            'intensity': self.intensity.value,
+            'difficulty': self.difficulty.value,
+            'custom_directions': self.custom_directions,
             'life_stage': self.life_stage.value,
             'current_employment': self.current_employment,
             'ocean': self.ocean.to_dict(),
@@ -62,6 +66,11 @@ class Life:
             user_id=data['user_id'],
             name=data['name'],
             age=data['age'],
+            gender=data['gender'],
+            custom_gender=data.get('custom_gender'),
+            intensity=Intensity(data['intensity']),
+            difficulty=Difficulty(data['difficulty']),
+            custom_directions=data.get('custom_directions'),
             life_stage=LifeStage(data['life_stage']),
             current_employment=data.get('current_employment'),
             ocean=Ocean.from_dict(data['ocean']),
@@ -72,6 +81,9 @@ class Life:
             last_played=data.get('last_played', datetime.utcnow()),
             archived=data.get('archived', False)
         )
+        
+
+
 
     def save(self) -> None:
         """Save life to database"""

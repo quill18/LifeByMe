@@ -14,97 +14,77 @@
         
         <div class="form-group">
             <label for="name">Name</label>
-            <input type="text" id="name" name="name" maxlength="50" required>
-            <div class="character-count"><span id="nameCount">0</span>/50</div>
+            <input type="text" id="name" name="name" maxlength="50" required
+                   value="{{ form_data.name if form_data else '' }}">
+            <div class="character-count"><span id="nameCount">{{ form_data.name|length if form_data else 0 }}</span>/50</div>
         </div>
-
+        
         <div class="form-group">
             <label>Gender</label>
             <div class="gender-options">
-                <label class="radio-option-horizontal" for="genderFemale">
-                    <input type="radio" id="genderFemale" name="gender" value="Female" required>
-                    <span>Female</span>
+                {% for gender in ['Female', 'Male', 'Non-Binary', 'Custom'] %}
+                <label class="radio-option-horizontal" for="gender{{ gender }}">
+                    <input type="radio" id="gender{{ gender }}" name="gender" value="{{ gender }}" required
+                           {{ 'checked' if form_data and form_data.gender == gender else '' }}>
+                    <span>{{ gender }}</span>
                 </label>
-                <label class="radio-option-horizontal" for="genderMale">
-                    <input type="radio" id="genderMale" name="gender" value="Male">
-                    <span>Male</span>
-                </label>
-                <label class="radio-option-horizontal" for="genderNonBinary">
-                    <input type="radio" id="genderNonBinary" name="gender" value="Non-Binary">
-                    <span>Non-Binary</span>
-                </label>
-                <label class="radio-option-horizontal" for="genderCustom">
-                    <input type="radio" id="genderCustom" name="gender" value="Custom">
-                    <span>Custom</span>
-                </label>
+                {% endfor %}
             </div>
         </div>
-                
-        <div class="form-group" id="customGenderGroup" style="display: none;">
+        
+        <div class="form-group" id="customGenderGroup" style="display: {{ 'block' if form_data and form_data.gender == 'Custom' else 'none' }};">
             <label for="customGender">Custom Gender</label>
-            <input type="text" id="customGender" name="custom_gender" maxlength="50">
-            <div class="character-count"><span id="genderCount">0</span>/50</div>
+            <input type="text" id="customGender" name="custom_gender" maxlength="50"
+                   value="{{ form_data.custom_gender if form_data else '' }}">
+            <div class="character-count"><span id="genderCount">{{ form_data.custom_gender|length if form_data else 0 }}</span>/50</div>
         </div>
-
+        
         <div class="form-group">
             <label>Intensity Level</label>
             <div class="radio-group">
+                {% for intensity, label, desc in [
+                    ('LIGHT', 'LIGHT', 'Idealized. Family-friendly. Avoids anything remotely triggering.'),
+                    ('MODERATE', 'MODERATE', 'The level of a prime-time family drama TV show with the occasional serious bits.'),
+                    ('GRITTY', 'GRITTY', 'Serious real-world issues and emotional challenges.')
+                ] %}
                 <div class="radio-option">
-                    <input type="radio" id="intensityLight" name="intensity" value="LIGHT" required>
-                    <label for="intensityLight">
-                        <strong>LIGHT</strong>
-                        <span>Idealized. Family-friendly. Avoids anything remotely triggering.</span>
+                    <input type="radio" id="intensity{{ intensity }}" name="intensity" value="{{ intensity }}" required
+                           {{ 'checked' if form_data and form_data.intensity == intensity else '' }}>
+                    <label for="intensity{{ intensity }}">
+                        <strong>{{ label }}</strong>
+                        <span>{{ desc }}</span>
                     </label>
                 </div>
-                <div class="radio-option">
-                    <input type="radio" id="intensityModerate" name="intensity" value="MODERATE">
-                    <label for="intensityModerate">
-                        <strong>MODERATE</strong>
-                        <span>The level of a prime-time family drama TV show with the occasional serious bits.</span>
-                    </label>
-                </div>
-                <div class="radio-option">
-                    <input type="radio" id="intensityGritty" name="intensity" value="GRITTY">
-                    <label for="intensityGritty">
-                        <strong>GRITTY</strong>
-                        <span>Serious real-world issues and emotional challenges.</span>
-                    </label>
-                </div>
+                {% endfor %}
             </div>
         </div>
-
+        
         <div class="form-group">
             <label>Difficulty Level</label>
             <div class="radio-group">
+                {% for difficulty, label, desc in [
+                    ('STORY', 'STORY', 'I want to mostly "succeed" at challenges, just in different ways.'),
+                    ('BALANCED', 'BALANCED', 'Things won\'t always go right, but that can be fun.'),
+                    ('CHALLENGING', 'CHALLENGING', 'Life is difficult, but how you deal with it is the goal.')
+                ] %}
                 <div class="radio-option">
-                    <input type="radio" id="difficultyStory" name="difficulty" value="STORY" required>
-                    <label for="difficultyStory">
-                        <strong>STORY</strong>
-                        <span>I want to mostly "succeed" at challenges, just in different ways.</span>
+                    <input type="radio" id="difficulty{{ difficulty }}" name="difficulty" value="{{ difficulty }}" required
+                           {{ 'checked' if form_data and form_data.difficulty == difficulty else '' }}>
+                    <label for="difficulty{{ difficulty }}">
+                        <strong>{{ label }}</strong>
+                        <span>{{ desc }}</span>
                     </label>
                 </div>
-                <div class="radio-option">
-                    <input type="radio" id="difficultyBalanced" name="difficulty" value="BALANCED">
-                    <label for="difficultyBalanced">
-                        <strong>BALANCED</strong>
-                        <span>Things won't always go right, but that can be fun.</span>
-                    </label>
-                </div>
-                <div class="radio-option">
-                    <input type="radio" id="difficultyChallenge" name="difficulty" value="CHALLENGING">
-                    <label for="difficultyChallenge">
-                        <strong>CHALLENGING</strong>
-                        <span>Life is difficult, but how you deal with it is the goal.</span>
-                    </label>
-                </div>
+                {% endfor %}
             </div>
         </div>
-
+        
         <div class="form-group">
             <label for="customDirections">Custom Directions (Optional)</label>
-            <textarea id="customDirections" name="custom_directions" maxlength="250" rows="3"></textarea>
-            <div class="character-count"><span id="directionsCount">0</span>/250</div>
+            <textarea id="customDirections" name="custom_directions" maxlength="250" rows="3">{{ form_data.custom_directions if form_data else '' }}</textarea>
+            <div class="character-count"><span id="directionsCount">{{ form_data.custom_directions|length if form_data else 0 }}</span>/250</div>
         </div>
+        
 
         <div class="form-actions">
             <button type="submit" class="button primary">Begin Your Journey</button>

@@ -653,3 +653,71 @@ textarea#customDirections::placeholder {
         grid-template-columns: 1fr;
     }
 }
+
+/* API Key Input Styling */
+.input-with-icon {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.input-with-icon input {
+    padding-right: 40px; /* Make room for the icon */
+}
+
+.toggle-visibility {
+    position: absolute;
+    right: 10px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 5px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.toggle-visibility:hover {
+    opacity: 0.8;
+}
+
+.toggle-visibility:focus {
+    outline: none;
+}
+
+/* Eye Icon Styles */
+.eye-icon {
+    width: 20px;
+    height: 20px;
+    position: relative;
+    display: inline-block;
+}
+
+.eye-icon::before {
+    content: "";
+    position: absolute;
+    width: 12px;
+    height: 12px;
+    border: 2px solid var(--secondary-color);
+    border-radius: 75% 15%;
+    transform: rotate(45deg);
+    left: 2px;
+    top: 2px;
+}
+
+.eye-icon.eye-closed::after {
+    content: "";
+    position: absolute;
+    width: 20px;
+    height: 2px;
+    background-color: var(--secondary-color);
+    transform: rotate(45deg);
+    left: 0;
+    top: 9px;
+}
+
+/* Improve input aesthetic when password type */
+input[type="password"] {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    letter-spacing: 0.2em;
+}
