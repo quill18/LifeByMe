@@ -1222,3 +1222,18 @@ input[type="password"] {
         justify-content: center;
     }
 }
+
+.impact-explanation {
+    margin: 1rem 0;
+    padding: 1rem;
+    background-color: var(--light-gray);
+    border-left: 3px solid var(--primary-color);
+    border-radius: 4px;
+}
+
+.impact-explanation p {
+    margin: 0;
+    line-height: 1.6;
+    color: var(--dark-gray);
+}
+

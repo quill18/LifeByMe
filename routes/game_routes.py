@@ -422,7 +422,7 @@ def make_memory(story_id):
             ],
             life_stage=current_life.life_stage,
             age_experienced=current_life.age,
-            current_relevance=memory_data['importance'],  # Start with importance as relevance
+            impact_explanation=memory_data['impact_explanation'],
             stress_impact=memory_data['stress_change'],
             character_ids=character_ids,
             source_story_id=story._id

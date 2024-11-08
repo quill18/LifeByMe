@@ -434,17 +434,21 @@ MEMORY_TOOLS = [{
                 "emotional_tags": {
                     "type": "array",
                     "items": {"type": "string"},
-                    "description": "List of emotions felt during this memory (e.g., 'proud', 'anxious', 'relieved')"
+                    "description": "List of emotions felt during this memory"
                 },
                 "context_tags": {
                     "type": "array",
                     "items": {"type": "string"},
-                    "description": "List of situational/location tags (e.g., 'school', 'public speaking', 'exam')"
+                    "description": "List of situational/location tags"
                 },
                 "story_tags": {
                     "type": "array",
                     "items": {"type": "string"},
-                    "description": "List of story-type tags (e.g., 'coming of age', 'first love', 'overcoming fear')"
+                    "description": "List of story-type tags"
+                },
+                "impact_explanation": {
+                    "type": "string",
+                    "description": "Detailed explanation of why the memory affects traits, skills, and stress levels the way it does"
                 },
                 "ocean_changes": {
                     "type": "object",
@@ -501,12 +505,13 @@ MEMORY_TOOLS = [{
             },
             "required": [
                 "title", "description", "importance", "permanence", 
-                "emotional_tags", "context_tags", "story_tags", 
-                "ocean_changes", "stress_change"
+                "emotional_tags", "context_tags", "story_tags",
+                "impact_explanation", "ocean_changes", "stress_change"
             ]
         }
     }
 }]
+
 
 
 def generate_memory_from_story(life: Life, story: Story) -> Dict:

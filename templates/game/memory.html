@@ -59,6 +59,10 @@
         <div class="memory-impacts">
             <h3>Effects</h3>
             
+            <div class="impact-explanation">
+                <p>{{ memory.impact_explanation }}</p>
+            </div>
+        
             {% if memory.ocean_impact.has_changes() %}
             <div class="impact-section">
                 <h4>Core Traits</h4>

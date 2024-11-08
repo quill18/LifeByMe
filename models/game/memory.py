@@ -28,10 +28,10 @@ class Memory:
     skill_impacts: List[Skill]
     life_stage: LifeStage
     age_experienced: int
-    current_relevance: int  # 1-10
+    impact_explanation: str  # New field for AI's justification
     stress_impact: int      # Positive or negative impact on stress
-    character_ids: List[ObjectId] = field(default_factory=list)  # Characters involved in memory
-    source_story_id: Optional[ObjectId] = None  # ID of story that created this memory
+    character_ids: List[ObjectId] = field(default_factory=list)
+    source_story_id: Optional[ObjectId] = None
     created_at: datetime = field(default_factory=datetime.utcnow)
     recontextualized_at: Optional[datetime] = None
     _id: ObjectId = field(default_factory=ObjectId)
@@ -51,16 +51,15 @@ class Memory:
             'ocean_impact': self.ocean_impact.to_dict(),
             'trait_impacts': [trait.to_dict() for trait in self.trait_impacts],
             'skill_impacts': [skill.to_dict() for skill in self.skill_impacts],
-            'life_stage': self.life_stage.value,  # Add .value here
+            'life_stage': self.life_stage.value,
             'age_experienced': self.age_experienced,
-            'current_relevance': self.current_relevance,
+            'impact_explanation': self.impact_explanation,
             'stress_impact': self.stress_impact,
             'character_ids': [str(char_id) for char_id in self.character_ids],
             'source_story_id': str(self.source_story_id) if self.source_story_id else None,
             'created_at': self.created_at,
             'recontextualized_at': self.recontextualized_at
         }
-
 
     @classmethod
     def from_dict(cls, data: Dict) -> 'Memory':
@@ -80,13 +79,14 @@ class Memory:
             skill_impacts=[Skill.from_dict(s) for s in data['skill_impacts']],
             life_stage=data['life_stage'],
             age_experienced=data['age_experienced'],
-            current_relevance=data['current_relevance'],
+            impact_explanation=data['impact_explanation'],
             stress_impact=data['stress_impact'],
             character_ids=[ObjectId(id_str) for id_str in data.get('character_ids', [])],
             source_story_id=ObjectId(data['source_story_id']) if data.get('source_story_id') else None,
             created_at=data.get('created_at', datetime.utcnow()),
             recontextualized_at=data.get('recontextualized_at')
         )
+
 
     def save(self) -> None:
         """Save memory to database"""
