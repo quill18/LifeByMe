@@ -5,7 +5,7 @@ from flask_wtf.csrf import generate_csrf
 from models.session import Session
 from models.user import User
 from models.game.life import Life
-from models.game.story import Story
+from models.game.story import Story, StoryStatus
 from .auth_decorator import login_required
 import logging
 from typing import Optional
@@ -15,7 +15,8 @@ from models.game.enums import LifeStage, Intensity, Difficulty
 import bleach
 from typing import Tuple, List
 from models.game.base import Ocean, Trait, Skill
-from models.game.story_ai import begin_story, continue_story, conclude_story
+from models.game.story_ai import begin_story, continue_story, conclude_story, generate_memory_from_story
+from models.game.memory import Memory
 import asyncio
 
 game_bp = Blueprint('game', __name__)
@@ -58,7 +59,9 @@ def game():
                          user=user,
                          life=current_life,
                          story=current_story,
+                         StoryStatus=StoryStatus,  # Add this line
                          csrf_token=generate_csrf())
+
 
 @game_bp.route('/game/lives')
 @login_required
@@ -264,18 +267,19 @@ def new_story():
             life_id=current_life._id,
             prompt="Starting new story",  # We might want to store the actual prompt later
             beats=[(story_response.story_text, None)],
-            current_options=story_response.options,
-            completed=False
+            current_options=story_response.options
         )
         story.save()
 
         # Return rendered partial template
         return render_template('game/partials/story.html', 
-                             story=story,
-                             csrf_token=generate_csrf())
+                      story=story,
+                      StoryStatus=StoryStatus,  # Add this line
+                      csrf_token=generate_csrf())
 
     except Exception as e:
-        logger.error(f"Error creating new story: {str(e)}")
+        import traceback
+        logger.error(f"Error creating new story: {str(e)}\n{traceback.format_exc()}")
         return jsonify({'error': str(e)}), 500
 
 @game_bp.route('/game/story/choose', methods=['POST'])
@@ -300,8 +304,8 @@ def choose_option():
         if not story:
             return jsonify({'error': 'No active story'}), 400
 
-        if story.completed:
-            return jsonify({'error': 'Story is already completed'}), 400
+        if story.status != StoryStatus.ACTIVE:
+            return jsonify({'error': 'Story is not active'}), 400
 
         # Validate option index
         option_index = int(data['option_index'])
@@ -322,8 +326,7 @@ def choose_option():
             # Add new beat with options
             story.add_story_beat(
                 story_response.story_text,
-                story_response.options,
-                False
+                story_response.options
             )
 
         print(story_response)
@@ -331,6 +334,7 @@ def choose_option():
         # Return rendered partial template
         return render_template('game/partials/story.html', 
                              story=story,
+                             StoryStatus=StoryStatus,  # Add this line
                              csrf_token=generate_csrf())
 
     except ValueError as e:
@@ -338,3 +342,170 @@ def choose_option():
     except Exception as e:
         logger.error(f"Error processing story choice: {str(e)}")
         return jsonify({'error': str(e)}), 500
+    
+
+@game_bp.route('/game/story/delete/<story_id>', methods=['POST'])
+@login_required
+def delete_story(story_id):
+    try:
+        user = get_current_user()
+        if not user:
+            return jsonify({'error': 'Not logged in'}), 401
+
+        story = Story.get_by_id(ObjectId(story_id))
+        if not story:
+            return jsonify({'error': 'Story not found'}), 404
+
+        # Verify story belongs to current life
+        db_session = Session.get_by_session_id(session['session_id'])
+        current_life = get_current_life(db_session)
+        if not current_life or story.life_id != current_life._id:
+            return jsonify({'error': 'Story not found'}), 404
+
+        story.delete_story()
+        return jsonify({'success': True})
+
+    except Exception as e:
+        logger.error(f"Error deleting story: {str(e)}")
+        return jsonify({'error': str(e)}), 500
+
+@game_bp.route('/game/story/make_memory/<story_id>', methods=['POST'])
+@login_required
+def make_memory(story_id):
+    try:
+        user = get_current_user()
+        if not user:
+            return jsonify({'error': 'Not logged in'}), 401
+
+        story = Story.get_by_id(ObjectId(story_id))
+        if not story:
+            return jsonify({'error': 'Story not found'}), 404
+
+        # Verify story belongs to current life
+        db_session = Session.get_by_session_id(session['session_id'])
+        current_life = get_current_life(db_session)
+        if not current_life or story.life_id != current_life._id:
+            return jsonify({'error': 'Story not found'}), 404
+
+        if story.status != StoryStatus.CONCLUDED:
+            return jsonify({'error': 'Story is not ready for memory creation'}), 400
+
+        # Generate memory parameters
+        memory_data = generate_memory_from_story(current_life, story)
+
+        # Collect character IDs from character changes
+        character_ids = []
+        for char_change in memory_data.get('character_changes', []):
+            char_id = ObjectId(char_change['character_id'])
+            character = Character.get_by_id(char_id)
+            if character and character.life_id == current_life._id:
+                character_ids.append(char_id)
+
+        # Create memory object
+        memory = Memory(
+            life_id=current_life._id,
+            title=memory_data['title'],
+            description=memory_data['description'],
+            importance=memory_data['importance'],
+            permanence=memory_data['permanence'],
+            emotional_tags=memory_data['emotional_tags'],
+            context_tags=memory_data['context_tags'],
+            story_tags=memory_data['story_tags'],
+            ocean_impact=Ocean.from_dict(memory_data['ocean_changes']),
+            trait_impacts=[
+                Trait(t['name'], t['value']) 
+                for t in memory_data.get('trait_changes', [])
+            ],
+            skill_impacts=[
+                Skill(s['name'], s['value']) 
+                for s in memory_data.get('skill_changes', [])
+            ],
+            life_stage=current_life.life_stage,
+            age_experienced=current_life.age,
+            current_relevance=memory_data['importance'],  # Start with importance as relevance
+            stress_impact=memory_data['stress_change'],
+            character_ids=character_ids,
+            source_story_id=story._id
+        )
+        memory.save()
+
+        # Apply memory effects to life
+        current_life.apply_memory(memory)
+
+        # Update character relationships if any
+        for char_change in memory_data.get('character_changes', []):
+            char_id = ObjectId(char_change['character_id'])
+            character = Character.get_by_id(char_id)
+            if character and character.life_id == current_life._id:
+                character.update_relationship(
+                    friendship_change=char_change.get('friendship_change', 0),
+                    romance_change=char_change.get('romance_change', 0),
+                    conflict_change=char_change.get('conflict_change', 0)
+                )
+                # Add memory to character's memory list
+                character.add_memory(memory._id)
+
+        # Mark story as completed
+        story.complete_with_memory(memory._id)
+
+        # Redirect to memory view
+        return jsonify({
+            'success': True,
+            'redirect': url_for('game.view_memory', memory_id=str(memory._id))
+        })
+
+    except Exception as e:
+        logger.error(f"Error creating memory: {str(e)}")
+        return jsonify({'error': str(e)}), 500
+
+@game_bp.route('/game/memory/<memory_id>')
+@login_required
+def view_memory(memory_id):
+    try:
+        user = get_current_user()
+        if not user:
+            logger.error("No user found in session")
+            return redirect(url_for('auth.login'))
+
+        try:
+            memory = Memory.get_by_id(ObjectId(memory_id))
+        except Exception as e:
+            logger.error(f"Error retrieving memory {memory_id}: {str(e)}\n{traceback.format_exc()}")
+            return redirect(url_for('game.game'))
+
+        if not memory:
+            logger.error(f"Memory {memory_id} not found")
+            return redirect(url_for('game.game'))
+
+        # Verify memory belongs to current life
+        db_session = Session.get_by_session_id(session['session_id'])
+        current_life = get_current_life(db_session)
+        if not current_life or memory.life_id != current_life._id:
+            logger.error(f"Memory {memory_id} does not belong to current life")
+            return redirect(url_for('game.game'))
+
+        # Get associated characters
+        try:
+            characters = memory.get_characters()
+        except Exception as e:
+            logger.error(f"Error retrieving characters for memory {memory_id}: {str(e)}\n{traceback.format_exc()}")
+            characters = []
+        
+        # Get original story if it exists
+        try:
+            story = Story.get_by_id(memory.source_story_id) if memory.source_story_id else None
+        except Exception as e:
+            logger.error(f"Error retrieving story for memory {memory_id}: {str(e)}\n{traceback.format_exc()}")
+            story = None
+
+        return render_template('game/memory.html',
+                             memory=memory,
+                             characters=characters,
+                             story=story,
+                             life=current_life,
+                             user=user,
+                             csrf_token=generate_csrf())
+
+    except Exception as e:
+        logger.error(f"Error viewing memory: {str(e)}\n{traceback.format_exc()}")
+        #return redirect(url_for('game.game'))

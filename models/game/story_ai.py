@@ -394,3 +394,235 @@ Your response must use the provided function to return:
 - Story text concluding this sequence
 - ZERO response options"""
     return base_prompt + continue_specific
+
+
+
+
+
+
+
+
+
+MEMORY_TOOLS = [{
+    "type": "function",
+    "function": {
+        "name": "create_memory",
+        "description": "Create a memory from a completed story",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "title": {
+                    "type": "string",
+                    "description": "Short, specific title for the memory (e.g., 'First Day Speech Disaster', 'Standing Up to the Bully')"
+                },
+                "description": {
+                    "type": "string",
+                    "description": "Concise but detailed description of the memory"
+                },
+                "importance": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 10,
+                    "description": "How important this memory is (1-10)"
+                },
+                "permanence": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 10,
+                    "description": "How permanent this memory is (1-10)"
+                },
+                "emotional_tags": {
+                    "type": "array",
+                    "items": {"type": "string"},
+                    "description": "List of emotions felt during this memory (e.g., 'proud', 'anxious', 'relieved')"
+                },
+                "context_tags": {
+                    "type": "array",
+                    "items": {"type": "string"},
+                    "description": "List of situational/location tags (e.g., 'school', 'public speaking', 'exam')"
+                },
+                "story_tags": {
+                    "type": "array",
+                    "items": {"type": "string"},
+                    "description": "List of story-type tags (e.g., 'coming of age', 'first love', 'overcoming fear')"
+                },
+                "ocean_changes": {
+                    "type": "object",
+                    "properties": {
+                        "openness": {"type": "integer", "minimum": -2, "maximum": 2},
+                        "conscientiousness": {"type": "integer", "minimum": -2, "maximum": 2},
+                        "extraversion": {"type": "integer", "minimum": -2, "maximum": 2},
+                        "agreeableness": {"type": "integer", "minimum": -2, "maximum": 2},
+                        "neuroticism": {"type": "integer", "minimum": -2, "maximum": 2}
+                    },
+                    "required": ["openness", "conscientiousness", "extraversion", "agreeableness", "neuroticism"]
+                },
+                "trait_changes": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "name": {"type": "string"},
+                            "value": {"type": "integer", "minimum": -2, "maximum": 2}
+                        },
+                        "required": ["name", "value"]
+                    }
+                },
+                "skill_changes": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "name": {"type": "string"},
+                            "value": {"type": "integer", "minimum": -2, "maximum": 2}
+                        },
+                        "required": ["name", "value"]
+                    }
+                },
+                "character_changes": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "character_id": {"type": "string"},
+                            "friendship_change": {"type": "integer", "minimum": -2, "maximum": 2},
+                            "romance_change": {"type": "integer", "minimum": -2, "maximum": 2},
+                            "conflict_change": {"type": "integer", "minimum": -2, "maximum": 2}
+                        },
+                        "required": ["character_id"]
+                    }
+                },
+                "stress_change": {
+                    "type": "integer",
+                    "minimum": -50,
+                    "maximum": 50,
+                    "description": "Change in stress level (-50 to +50)"
+                }
+            },
+            "required": [
+                "title", "description", "importance", "permanence", 
+                "emotional_tags", "context_tags", "story_tags", 
+                "ocean_changes", "stress_change"
+            ]
+        }
+    }
+}]
+
+
+def generate_memory_from_story(life: Life, story: Story) -> Dict:
+    """Generate memory parameters from a concluded story"""
+    logger.info(f"Generating memory for story {story._id}")
+    
+    try:
+        # Get API key from user profile
+        user = User.get_by_id(life.user_id)
+        if not user or not user.openai_api_key:
+            raise ValueError("No OpenAI API key available")
+
+        # Initialize OpenAI client
+        client = OpenAI(api_key=user.openai_api_key)
+        
+        # Build story context
+        story_context = "\n\n".join([
+            "Story progression:",
+            *[f"Beat: {clean_text_for_json(beat)}\nResponse: {clean_text_for_json(response) if response else 'Final beat'}" 
+              for beat, response in story.beats]
+        ])
+        
+        # Build prompt
+        prompt = build_memory_generation_prompt(life)
+        
+        # Make API call
+        response = client.chat.completions.create(
+            model=gpt_model,
+            messages=[
+                {"role": "system", "content": prompt},
+                {"role": "user", "content": f"""
+Story context:
+{story_context}
+
+Generate a memory based on this story."""}
+            ],
+            tools=MEMORY_TOOLS,
+            tool_choice={"type": "function", "function": {"name": "create_memory"}}
+        )
+        
+        # Parse response
+        tool_call = response.choices[0].message.tool_calls[0]
+        result = json.loads(tool_call.function.arguments)
+        
+        # Store memory parameters in story
+        story.store_memory_params(
+            title=result["title"],
+            description=result["description"],
+            params=result
+        )
+        
+        return result
+        
+    except Exception as e:
+        logger.error(f"Error generating memory: {str(e)}")
+        raise
+
+
+def build_memory_generation_prompt(life: Life) -> str:
+    """Build the prompt for memory generation from a story"""
+    # Modify the character summary function first
+    def build_character_summary(life: Life) -> str:
+        """Create a concise character summary for the AI"""
+        gender_desc = life.custom_gender if life.gender == "Custom" else life.gender
+        
+        traits_desc = []
+        for trait in life.ocean.to_dict().items():
+            traits_desc.append(f"{trait[0]}: {trait[1]}")
+        
+        summary = [
+            f"{life.name} is a {life.age}-year-old {gender_desc} in {life.life_stage.value}.",  # Use .value here
+            f"Personality: {', '.join(traits_desc)}" if traits_desc else None,
+            f"Current stress level: {life.current_stress}/100",
+            f"Game intensity: {life.intensity.value}",  # Use .value here
+            f"Game difficulty: {life.difficulty.value}"  # Use .value here
+        ]
+        
+        if life.custom_directions:
+            summary.append(f"Special character notes: {life.custom_directions}")
+            
+        return "\n".join(filter(None, summary))
+
+    character_summary = build_character_summary(life)
+    
+    return f"""You are analyzing a concluded story to determine its effects on the character and create a memory of what happened. Your task is to interpret the story's events and their impact on {life.name}.
+
+Character Information:
+{character_summary}
+
+Guidelines for Memory Generation:
+
+1. Memory Creation:
+   - Generate a concise but meaningful title
+   - Write a clear, specific description that captures the key moments
+   - Importance (1-10) should reflect how much this event matters to {life.name}. 1=absolute triviality that is only worth noting for story consistency. 5=something that might surface one a month. 10=something of critical importance that weighs heavily on the mind even if only temporarily
+   - Permanence (1-10) should reflect how long this memory will matter. 1=short term, only matters for the current season (e.g. an upcoming test, a recent insult). 5=matters throughout the current life stage (e.g. meeting someone new, winning a school debate). 10=permanent core memory, never forgotten (e.g. death of a friend, first kiss)
+   - For example: Failing or passing an exam at school could be immediately very important (Importance 10), but be a fleeting memory that won't matter next season (Permanence 1). Getting a pet would be relatively meaningful but not affect many day-to-day events (Importance 6) and be something with fairly long-term effects (Permanence 8).
+   - Tags should be specific and meaningful
+
+2. Impact Guidelines:
+   - Individual trait changes cannot exceed +2 or -2
+   - Consider both direct effects and subtle influences
+   - Not every story needs to affect every aspect
+   - Changes should feel natural given the story events
+   - One new secondary trait can be suggested if appropriate, and it can start from a value from +2 to -2
+   - Stress changes can range from -50 to +50. Success level of the conclusion has an impact on stress, but the biggest consideration should be if the choices the players made were aligned with the characters traits (doing what comes "naturally" isn't stressful) or if the choices run counter to the character's traits (especially the OCEAN traits), because going against one's nature is stressful even if it leads to character development.
+
+3. Tag Selection:
+   - Emotional tags should reflect the character's feelings
+   - Context tags should capture the situation and setting
+   - Story tags should identify the type of experience (e.g., "coming of age", "first love", "personal triumph")
+
+4. Character Development:
+   - Consider how choices aligned with or challenged current traits
+   - Account for the difficulty and intensity settings
+   - Consider current stress levels when determining impact
+   - Think about long-term character development
+
+Process the story and create a memory that captures both what happened and how it affected {life.name}."""

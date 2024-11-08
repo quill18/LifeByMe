@@ -989,3 +989,236 @@ input[type="password"] {
 .stress-value[data-stress-level="medium"] {
     border-color: var(--warning-color);
 }
+
+/* Memory View Styles */
+.memory-container {
+    max-width: 800px;
+    margin: 2rem auto;
+    padding: 2rem;
+    background-color: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px var(--shadow-color);
+}
+
+.memory-header {
+    margin-bottom: 2rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.memory-header h2 {
+    color: var(--primary-color);
+    margin-bottom: 0.5rem;
+}
+
+.memory-metadata {
+    color: var(--secondary-color);
+    font-size: 0.9em;
+}
+
+.memory-metadata span:not(:last-child)::after {
+    content: "•";
+    margin: 0 0.5rem;
+}
+
+.memory-description {
+    font-size: 1.1em;
+    line-height: 1.6;
+    margin-bottom: 2rem;
+}
+
+.memory-tags {
+    margin-bottom: 2rem;
+}
+
+.tag-section {
+    margin-bottom: 1rem;
+}
+
+.tag-section h4 {
+    margin-bottom: 0.5rem;
+    color: var(--secondary-color);
+}
+
+.tag-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+.tag {
+    padding: 0.25rem 0.75rem;
+    background-color: var(--light-gray);
+    border-radius: 1rem;
+    font-size: 0.9em;
+}
+
+.story-tags .tag {
+    background-color: #e3f2fd;
+    color: #1976d2;
+}
+
+.emotional-tags .tag {
+    background-color: #fce4ec;
+    color: #c2185b;
+}
+
+.context-tags .tag {
+    background-color: #f3e5f5;
+    color: #7b1fa2;
+}
+
+.memory-impacts {
+    margin-bottom: 2rem;
+}
+
+.impact-section {
+    margin-bottom: 1.5rem;
+}
+
+.impact-section h4 {
+    margin-bottom: 0.5rem;
+    color: var(--secondary-color);
+}
+
+.trait-changes, .skill-changes {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 0.5rem;
+}
+
+.trait-change, .skill-change {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.5rem;
+    background-color: var(--light-gray);
+    border-radius: 4px;
+}
+
+.positive {
+    color: var(--success-color);
+}
+
+.negative {
+    color: var(--danger-color);
+}
+
+.character-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.character-entry {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 0.5rem;
+    background-color: var(--light-gray);
+    border-radius: 4px;
+}
+
+.character-name {
+    font-weight: 500;
+}
+
+.relationship-tags {
+    display: flex;
+    gap: 0.25rem;
+}
+
+.stress-change {
+    font-size: 1.2em;
+    font-weight: 500;
+    padding: 0.5rem;
+    border-radius: 4px;
+    display: inline-block;
+}
+
+.stress-increase {
+    background-color: #ffebee;
+    color: var(--danger-color);
+}
+
+.stress-decrease {
+    background-color: #e8f5e9;
+    color: var(--success-color);
+}
+
+.original-story {
+    margin-top: 2rem;
+    padding-top: 2rem;
+    border-top: 1px solid var(--border-color);
+}
+
+.story-beats {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.story-beat {
+    padding: 1rem;
+    background-color: var(--light-gray);
+    border-radius: 4px;
+}
+
+.beat-response {
+    margin-top: 0.5rem;
+    padding-top: 0.5rem;
+    border-top: 1px solid var(--border-color);
+    color: var(--secondary-color);
+    font-style: italic;
+}
+
+.memory-footer {
+    margin-top: 2rem;
+    padding-top: 2rem;
+    border-top: 1px solid var(--border-color);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.memory-stats {
+    display: flex;
+    gap: 2rem;
+}
+
+.stat {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.stat-label {
+    font-size: 0.9em;
+    color: var(--secondary-color);
+}
+
+.stat-value {
+    font-size: 1.2em;
+    font-weight: 500;
+}
+
+@media (max-width: 768px) {
+    .memory-container {
+        margin: 1rem;
+        padding: 1rem;
+    }
+
+    .trait-changes, .skill-changes {
+        grid-template-columns: 1fr;
+    }
+
+    .memory-footer {
+        flex-direction: column;
+        gap: 1rem;
+        text-align: center;
+    }
+
+    .memory-stats {
+        justify-content: center;
+    }
+}

@@ -1,0 +1,175 @@
+<!-- ./templates/game/memory.html -->
+{% extends "master.html" %}
+
+{% block extra_head %}
+<script src="{{ url_for('static', filename='js/memory.js') }}"></script>
+{% endblock %}
+
+{% block content %}
+<div class="memory-container">
+    <div class="memory-header">
+        <h2>{{ memory.title }}</h2>
+        <div class="memory-metadata">
+            <span class="age">Age {{ memory.age_experienced }}</span>
+            <span class="life-stage">{{ memory.life_stage }}</span>
+            <span class="date">{{ memory.created_at.strftime('%Y-%m-%d') }}</span>
+        </div>
+    </div>
+
+    <div class="memory-content">
+        <div class="memory-description">
+            {{ memory.description }}
+        </div>
+
+        <div class="memory-tags">
+            {% if memory.story_tags %}
+            <div class="tag-section">
+                <h4>Story Type</h4>
+                <div class="tag-list story-tags">
+                    {% for tag in memory.story_tags %}
+                    <span class="tag">{{ tag }}</span>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+
+            {% if memory.emotional_tags %}
+            <div class="tag-section">
+                <h4>Emotions</h4>
+                <div class="tag-list emotional-tags">
+                    {% for tag in memory.emotional_tags %}
+                    <span class="tag">{{ tag }}</span>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+
+            {% if memory.context_tags %}
+            <div class="tag-section">
+                <h4>Context</h4>
+                <div class="tag-list context-tags">
+                    {% for tag in memory.context_tags %}
+                    <span class="tag">{{ tag }}</span>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+        </div>
+
+        <div class="memory-impacts">
+            <h3>Effects</h3>
+            
+            {% if memory.ocean_impact.has_changes() %}
+            <div class="impact-section">
+                <h4>Core Traits</h4>
+                <div class="trait-changes">
+                    {% for trait, value in memory.ocean_impact.to_dict().items() %}
+                        {% if value != 0 %}
+                        <div class="trait-change">
+                            <span class="trait-name">{{ trait|title }}</span>
+                            <span class="trait-value {% if value > 0 %}positive{% elif value < 0 %}negative{% endif %}">
+                                {{ '+' if value > 0 }}{{ value }}
+                            </span>
+                        </div>
+                        {% endif %}
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+
+            {% if memory.trait_impacts %}
+            <div class="impact-section">
+                <h4>Secondary Traits</h4>
+                <div class="trait-changes">
+                    {% for trait in memory.trait_impacts %}
+                    <div class="trait-change">
+                        <span class="trait-name">{{ trait.name }}</span>
+                        <span class="trait-value {% if trait.value > 0 %}positive{% elif trait.value < 0 %}negative{% endif %}">
+                            {{ '+' if trait.value > 0 }}{{ trait.value }}
+                        </span>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+
+            {% if memory.skill_impacts %}
+            <div class="impact-section">
+                <h4>Skills</h4>
+                <div class="skill-changes">
+                    {% for skill in memory.skill_impacts %}
+                    <div class="skill-change">
+                        <span class="skill-name">{{ skill.name }}</span>
+                        <span class="skill-value {% if skill.value > 0 %}positive{% elif skill.value < 0 %}negative{% endif %}">
+                            {{ '+' if skill.value > 0 }}{{ skill.value }}
+                        </span>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+
+            {% if characters %}
+            <div class="impact-section">
+                <h4>People Involved</h4>
+                <div class="character-list">
+                    {% for character in characters %}
+                    <div class="character-entry">
+                        <span class="character-name">{{ character.name }}</span>
+                        <span class="relationship-tags">
+                            {% for tag in character.relationship_tags %}
+                            <span class="tag">{{ tag }}</span>
+                            {% endfor %}
+                        </span>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+
+            {% if memory.stress_impact != 0 %}
+            <div class="impact-section">
+                <h4>Stress Impact</h4>
+                <div class="stress-change {% if memory.stress_impact > 0 %}stress-increase{% elif memory.stress_impact < 0 %}stress-decrease{% endif %}">
+                    {{ '+' if memory.stress_impact > 0 }}{{ memory.stress_impact }}
+                </div>
+            </div>
+            {% endif %}
+        </div>
+
+        {% if story %}
+        <div class="original-story">
+            <h3>Original Story</h3>
+            <div class="story-beats">
+                {% for beat, response in story.beats %}
+                <div class="story-beat">
+                    <div class="beat-text">{{ beat }}</div>
+                    {% if response %}
+                    <div class="beat-response">➜ {{ response }}</div>
+                    {% endif %}
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+    <div class="memory-footer">
+        <div class="memory-stats">
+            <div class="stat">
+                <span class="stat-label">Importance</span>
+                <span class="stat-value">{{ memory.importance }}/10</span>
+            </div>
+            <div class="stat">
+                <span class="stat-label">Permanence</span>
+                <span class="stat-value">{{ memory.permanence }}/10</span>
+            </div>
+            <div class="stat">
+                <span class="stat-label">Current Relevance</span>
+                <span class="stat-value">{{ memory.current_relevance }}/10</span>
+            </div>
+        </div>
+        <a href="{{ url_for('game.game') }}" class="button primary">Back to Game</a>
+    </div>
+</div>
+{% endblock %}

@@ -22,7 +22,14 @@
         </div>
     </div>
     
-    {% if not story.completed %}
+    {% if story.status == StoryStatus.CONCLUDED %}
+    <div class="story-concluded">
+        <button class="button primary make-memory-button" 
+                data-story-id="{{ story._id }}">Make This a Memory</button>
+        <button class="button danger delete-story-button" 
+                data-story-id="{{ story._id }}">Delete Story</button>
+    </div>
+    {% elif story.status == StoryStatus.ACTIVE %}
     <div class="story-options">
         {% for option in story.current_options %}
         <button class="story-option button" data-option="{{ loop.index0 }}">
@@ -30,9 +37,10 @@
         </button>
         {% endfor %}
     </div>
-    {% else %}
+    {% elif story.status == StoryStatus.COMPLETED %}
     <div class="story-complete">
-        <button class="button primary new-story-button">Start New Story</button>
+        <a href="{{ url_for('game.view_memory', memory_id=story.resulting_memory_id) }}" 
+           class="button primary">View Memory</a>
     </div>
     {% endif %}
-</div>
+    </div>

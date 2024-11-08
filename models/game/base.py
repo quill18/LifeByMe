@@ -41,6 +41,11 @@ class Ocean:
             agreeableness=data.get('agreeableness', 0),
             neuroticism=data.get('neuroticism', 0)
         )
+    
+    def has_changes(self) -> bool:
+        """Check if any OCEAN values are non-zero"""
+        return any(value != 0 for value in self.to_dict().values())
+    
 
 @dataclass
 class Trait:
@@ -99,3 +104,5 @@ class Skill:
             name=data['name'],
             value=data.get('value', 0)
         )
+    
+    

@@ -134,3 +134,74 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 });
+
+document.addEventListener('click', async (e) => {
+    // Delete story button
+    if (e.target.matches('.delete-story-button')) {
+        if (!confirm('Are you sure you want to delete this story? This cannot be undone.')) {
+            return;
+        }
+        
+        const storyId = e.target.dataset.storyId;
+        try {
+            const response = await fetch(`/game/story/delete/${storyId}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': CSRFToken.getToken()
+                }
+            });
+            
+            if (!response.ok) {
+                throw new Error('Failed to delete story');
+            }
+            
+            // Refresh the game page
+            location.reload();
+            
+        } catch (error) {
+            console.error('Error:', error);
+            alert('Error deleting story. Please try again.');
+        }
+    }
+    
+    // Make memory button
+    if (e.target.matches('.make-memory-button')) {
+        const storyId = e.target.dataset.storyId;
+        const buttonContainer = e.target.parentElement;
+        
+        // Show loading state
+        buttonContainer.innerHTML = '<div class="loading">Creating memory...</div>';
+        
+        try {
+            const response = await fetch(`/game/story/make_memory/${storyId}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': CSRFToken.getToken()
+                }
+            });
+            
+            if (!response.ok) {
+                throw new Error('Failed to create memory');
+            }
+            
+            const data = await response.json();
+            if (data.redirect) {
+                window.location.href = data.redirect;
+            } else {
+                location.reload();
+            }
+            
+        } catch (error) {
+            console.error('Error:', error);
+            buttonContainer.innerHTML = `
+                <div class="error-message">
+                    Error creating memory. Please try again.
+                    <button class="button primary" onclick="location.reload()">
+                        Refresh
+                    </button>
+                </div>`;
+        }
+    }
+});
