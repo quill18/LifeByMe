@@ -12,6 +12,7 @@ from models.game.enums import LifeStage, Intensity, Difficulty
 from models.game.story import Story
 from models.game.character import Character, RelationshipStatus
 from bson import ObjectId
+from .memory import Memory
 import random
 import re
 
@@ -322,19 +323,19 @@ def build_intensity_guidelines(intensity: Intensity, difficulty: Difficulty) -> 
         intensity_text =  """This story should maintain a LIGHT intensity level. Keep the tone optimistic and uplifting. Focus on positive personal growth and achievements. Handle conflicts through communication and understanding. Avoid topics that could be triggering or distressing. Use humor and warmth appropriately. Keep any romance at a sweet, innocent level."""
     
     elif intensity == Intensity.MODERATE:
-        intensity_text =  """This story should maintain a MODERATE intensity level. Balance lighter moments with meaningful challenges. Allow for both success and setbacks. Include realistic interpersonal conflicts. Touch on serious topics without dwelling on them. Show consequences for actions while maintaining hope. Handle romance at a realistic but tasteful level. Allow for some anxiety and stress in reasonable amounts. Keep darker elements brief and resolution-focused."""
+        intensity_text =  """This story should maintain a MODERATE intensity level. Provide meaningful, realistic challenges. Allow for both success and setbacks. Include realistic interpersonal conflicts. Touch on serious topics. Show consequences for actions while maintaining hope. Handle romance at a realistic but tasteful level. Allow for anxiety and stress. Keep darker elements brief and resolution-focused."""
     
     else:  # GRITTY
         intensity_text =  """This story should maintain a GRITTY intensity level. Present realistic challenges without guaranteed resolution. Allow for meaningful failures and their consequences. Explore complex emotional and interpersonal situations. Address serious real-world issues directly. Handle romance, relationships, and sexuality realistically. Include genuine struggles with identity and values. Don't shy away from internal conflicts and doubts. Remember that growth can come from difficulty."""
 
     if difficulty == Difficulty.STORY:
-        intensity_text += """\n\nDifficulty is set to STORY mode. The character should generally succeed at their chosen actions, though the manner and consequences of success may vary. Failures should be rare and primarily serve character development rather than creating serious setbacks. Provide clear paths to achieve desired outcomes."""
+        intensity_text += """\n\nDifficulty is set to STORY mode. The character should generally succeed at their chosen actions, though the manner and consequences of success may vary. Failures should be rare and primarily serve character development rather than creating serious setbacks. Provide clear paths to achieve desired outcomes. If stress is below 30, try to generate a story that will generate stress, but judge actual stress generation based on the character's choices, traits, and story outcome"""
 
     elif difficulty == Difficulty.BALANCED:
-        intensity_text += """\n\nDifficulty is set to BALANCED mode. Success should depend on how well the chosen action aligns with the character's traits and previous development. Actions that go against type should be notably harder to succeed at. Include a mix of successes and setbacks, with neither dominating the narrative."""
+        intensity_text += """\n\nDifficulty is set to BALANCED mode. Success should depend on how well the chosen action aligns with the character's traits and previous development. Actions that go against type should be notably harder to succeed at. Include a mix of successes and setbacks, with neither dominating the narrative. If stress is below 50, try to generate a story that will generate stress, but judge actual stress generation based on the character's choices, traits, and story outcome"""
 
     else:  # CHALLENGING
-        intensity_text += """\n\nDifficulty is set to CHALLENGING mode. Success should be earned and never guaranteed. Actions that go against the character's established traits can still succeed, but at the cost of personal stress. Create meaningful obstacles that require careful choice selection. Let failures have lasting impact, though allow for eventual recovery and growth."""
+        intensity_text += """\n\nDifficulty is set to CHALLENGING mode. Success should be earned and never guaranteed. Actions that go against the character's established traits can still succeed, but at the cost of personal stress. Create meaningful obstacles that require careful choice selection. Let failures have lasting impact, though allow for eventual recovery and growth. If stress is below 70, try to generate a story that will generate stress, but judge actual stress generation based on the character's choices, traits, and story outcome."""
 
 
     return intensity_text
@@ -343,13 +344,19 @@ def build_base_prompt(life: Life) -> str:
     """Build the base system prompt for all story interactions"""
     character_summary = build_character_summary(life)
     intensity_guidelines = build_intensity_guidelines(life.intensity, life.difficulty)
+    memories_json = Memory.format_memories_for_ai(life._id)
     
     return f"""You are a life simulation game's story generation system. Your role is to create engaging, contextually appropriate story beats that feel natural and personal to the character. Use direct, active, language - preferring a simple and straightforward writing style rather than flowerly or prosaic text.
 
 Character Information:
 {character_summary}
 
-Intensity Guidelines: {intensity_guidelines}
+Intensity & Difficulty Guidelines: {intensity_guidelines}
+
+Character's Memory History, in chronological order:
+{memories_json}
+
+Use these memories to help craft linking stories, but also to avoid duplicating scenarios that the player has already experienced. Make sure the player is experiencing a variety of different events, while also sometimes revisiting previous plot points - especially if they are important, life-affecting moments.
 
 Story Guidelines:
 1. Incorporate {life.name}'s personality traits naturally:
@@ -361,7 +368,7 @@ Story Guidelines:
 2. Consider stress levels:
    - Current stress affects emotional reactions
    - High stress (>70) makes challenges harder. When highly stress, consider offering options that represent a "mental breakdown" inline with a character's traits that might provide a large stress relief even at the cost of a negative outcome to the story. (e.g. a high school student deciding to blow off studying for an exame to play video games instead)
-   - Low stress (<30) allows for more ambitious responses, including opportunities to push the characters limits (even counter to traits) for greater success but higher stress generation
+   - Low stress (<30) allows for more ambitious responses, including opportunities to push the characters limits (even counter to traits) for greater success but higher stress generation. At low stress, generate story beats that are likely to increase stress even, or especially, during times of personal growth.
 
 3. Story elements should:
    - Feel natural and age-appropriate
@@ -664,6 +671,8 @@ def build_memory_generation_prompt(life: Life, story: Story) -> str:
     # Get character information for characters involved in this story
     characters_json = Character.format_characters_for_ai(story.character_ids, life_id=life._id)
 
+    intensity_guidelines = build_intensity_guidelines(life.intensity, life.difficulty)
+    memories_json = Memory.format_memories_for_ai(life._id)
     
     return f"""You are analyzing a concluded story to determine its effects on the character and create a memory of what happened. Your task is to interpret the story's events and their impact on {life.name}.
 
@@ -672,6 +681,11 @@ Character Information:
 
 Characters in this story, in JSON format - make sure to match the IDs to the correct character.
 {characters_json}
+
+Intensity & Difficulty Guidelines: {intensity_guidelines}
+
+Character's Memory History, in chronological order:
+{memories_json}
 
 Guidelines for Memory Generation:
 

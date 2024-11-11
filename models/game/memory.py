@@ -8,10 +8,14 @@ from pymongo import MongoClient
 from models.game.life import LifeStage
 from config import Config
 from .base import Ocean, Trait, Skill
+import json
 
 client = MongoClient(Config.MONGO_URI)
 db = client[Config.DB_NAME]
 memories = db.memories
+
+import logging
+logger = logging.getLogger(__name__)
 
 @dataclass
 class Memory:
@@ -118,3 +122,33 @@ class Memory:
         """Get all characters involved in this memory"""
         from .character import Character
         return [Character.get_by_id(char_id) for char_id in self.character_ids]
+    
+    @staticmethod
+    def format_memories_for_ai(life_id: ObjectId) -> str:
+        """Format all non-faded memories as JSON for the AI, sorted by creation date"""
+        try:
+            # Get all memories for this life where permanence > 0
+            memory_data = memories.find({
+                'life_id': life_id,
+                'permanence': {'$gt': 0}
+            }).sort('created_at', 1)  # 1 for ascending order (oldest first)
+            
+            memories_list = []
+            for mem_data in memory_data:
+                memory = Memory.from_dict(mem_data)
+                # Handle life_stage which might be string or enum
+                life_stage = memory.life_stage
+                if isinstance(life_stage, LifeStage):
+                    life_stage = life_stage.value
+                
+                memories_list.append({
+                    'description': memory.description,
+                    'life_stage': life_stage,
+                    'age_experienced': memory.age_experienced,
+                    'stress_impact': memory.stress_impact
+                })
+            
+            return json.dumps(memories_list, indent=2)
+        except Exception as e:
+            logger.error(f"Error formatting memories for AI: {str(e)}")
+            return "[]"  # Return empty array in case of error
