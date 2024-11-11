@@ -132,10 +132,8 @@ class Character:
         else:
             query['relationship_status'] = 'Active'
         
-        print("DEBUG: Query:", query) 
         characters_data = []
         for char_data in characters.find(query):
-            print("DEBUG: Found character:", char_data)
             char = Character.from_dict(char_data)
             characters_data.append({
                 'id': str(char._id),
