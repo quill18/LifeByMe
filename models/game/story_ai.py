@@ -411,7 +411,8 @@ def build_story_continue_prompt(life: Life, story: Story) -> str:
     base_prompt = build_base_prompt(life)
 
     # Get character information for characters involved in this story
-    characters_json = Character.format_characters_for_ai(story.character_ids, life_id=life._id)
+    #characters_json = Character.format_characters_for_ai(story.character_ids, life_id=life._id)
+    characters_json = Character.format_characters_for_ai(life_id=life._id)
 
     
     continue_specific = f"""
@@ -436,7 +437,8 @@ def build_story_conclusion_prompt(life: Life, story: Story) -> str:
     """Build the prompt for concluding a story"""
     base_prompt = build_base_prompt(life)
 
-    characters_json = Character.format_characters_for_ai(story.character_ids, life_id=life._id)
+    #characters_json = Character.format_characters_for_ai(story.character_ids, life_id=life._id)
+    characters_json = Character.format_characters_for_ai(life_id=life._id)
     
     continue_specific = """
 Characters in this story, in JSON format:
@@ -525,6 +527,11 @@ MEMORY_TOOLS = [{
                         },
                         "required": ["name", "value"]
                     }
+                },
+                "character_ids_of_featured_characters": {
+                    "type": "array",
+                    "items": {"type": "string"},
+                    "description": "List the IDs of characters that had a role in this story"
                 },
                 "character_changes": {
                     "type": "array",

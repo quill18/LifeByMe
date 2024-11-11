@@ -406,7 +406,9 @@ def make_memory(story_id):
         memory_data = generate_memory_from_story(current_life, story)
 
         # Use character IDs from the story instead of character_changes
-        character_ids = story.character_ids
+        #character_ids = story.character_ids
+        # Actually, let's try it with a new field instead:
+        character_ids = memory_data['character_ids_of_featured_characters']
 
         # Create memory object
         memory = Memory(
@@ -431,7 +433,7 @@ def make_memory(story_id):
             age_experienced=current_life.age,
             impact_explanation=memory_data['impact_explanation'],
             stress_impact=memory_data['stress_change'],
-            character_ids=character_ids,  # Use story's character list
+            character_ids=character_ids,
             source_story_id=story._id
         )
         memory.save()
@@ -645,3 +647,73 @@ def get_memories():
     except Exception as e:
         logger.error(f"Error getting memories: {str(e)}")
         return jsonify({'error': str(e)}), 500
+
+@game_bp.route('/game/characters')
+@login_required
+def get_characters():
+    """Get all active characters for current life"""
+    try:
+        user = get_current_user()
+        if not user:
+            return jsonify({'error': 'Not logged in'}), 401
+
+        db_session = Session.get_by_session_id(session['session_id'])
+        current_life = get_current_life(db_session)
+        if not current_life:
+            return jsonify({'error': 'No active life'}), 400
+
+        # Get active characters
+        characters = Character.get_by_life_id(current_life._id)
+        active_characters = [c for c in characters if c.relationship_status == RelationshipStatus.ACTIVE]
+        
+        # Format character data
+        character_list = [{
+            'id': str(char._id),
+            'name': char.name,
+            'age': char.age,
+            'relationship_type': char.relationship_description.split('.')[0].strip(),  # Get first sentence
+        } for char in active_characters]
+
+        return jsonify({'characters': character_list})
+
+    except Exception as e:
+        logger.error(f"Error getting characters: {str(e)}")
+        return jsonify({'error': str(e)}), 500
+
+@game_bp.route('/game/character/<character_id>')
+@login_required
+def view_character(character_id):
+    """View a specific character"""
+    try:
+        user = get_current_user()
+        if not user:
+            return redirect(url_for('auth.login'))
+
+        character = Character.get_by_id(ObjectId(character_id))
+        if not character:
+            return redirect(url_for('game.game'))
+
+        # Get all active characters for dropdown
+        all_characters = Character.get_by_life_id(character.life_id)
+        all_characters.sort(key=lambda x: x.name.lower())  # Case-insensitive sort
+        
+        # Get memories involving this character
+        memories = []
+        for memory_id in character.memory_ids:
+            memory = Memory.get_by_id(memory_id)
+            if memory:
+                memories.append(memory)
+        
+        # Sort memories by importance and date
+        memories.sort(key=lambda m: (-m.importance, -m.created_at.timestamp()))
+
+        return render_template('game/character.html',
+                             character=character,
+                             all_characters=all_characters,
+                             memories=memories,
+                             user=user,
+                             csrf_token=generate_csrf())
+
+    except Exception as e:
+        logger.error(f"Error viewing character: {str(e)}")
+        return redirect(url_for('game.game'))

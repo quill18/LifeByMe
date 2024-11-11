@@ -952,13 +952,28 @@ input[type="password"] {
 /* Character Info Styling */
 .character-metadata {
     margin-top: 0.5rem;
+    display: flex;
+    flex-direction: column;
+}
+
+.character-metadata-group {
+    display: flex;
+    flex-direction: row;    
 }
 
 .metadata-item {
     display: flex;
+    flex-direction: column;  /* Changed from horizontal to vertical layout */
     justify-content: space-between;
-    align-items: center;
-    padding: 0.25rem 0;
+    align-items: left;
+}
+
+.character-metadata-group .metadata-item {
+    display: flex;
+    flex-direction: column;  /* Changed from horizontal to vertical layout */
+    justify-content: space-between;
+    align-items: left;
+    width: 50%;
 }
 
 .metadata-label {
@@ -1515,4 +1530,129 @@ button:disabled {
 .radio-option-horizontal input[type="radio"]:disabled + label {
     opacity: 0.7;
     cursor: not-allowed;
+}
+
+/* Character Container */
+.character-container {
+    max-width: 800px;
+    margin: 2rem auto;
+    padding: 2rem;
+    background-color: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px var(--shadow-color);
+}
+
+.character-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.character-select {
+    padding: 0.5rem;
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    font-size: 1rem;
+    min-width: 200px;
+}
+
+.character-main h2 {
+    color: var(--primary-color);
+    margin-bottom: 0.5rem;
+}
+
+.character-metadata {
+    display: flex;
+    gap: 1rem;
+    color: var(--secondary-color);
+    margin-bottom: 1.5rem;
+}
+
+.relationship-status {
+    padding: 0.25rem 0.75rem;
+    border-radius: 12px;
+    font-size: 0.9em;
+}
+
+.relationship-status.active {
+    background-color: #e8f5e9;
+    color: #2e7d32;
+}
+
+.relationship-status.departed {
+    background-color: #fff3e0;
+    color: #ef6c00;
+}
+
+.relationship-status.deceased {
+    background-color: #fafafa;
+    color: var(--secondary-color);
+}
+
+.character-section {
+    margin-bottom: 2rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.character-section:last-child {
+    border-bottom: none;
+    margin-bottom: 0;
+    padding-bottom: 0;
+}
+
+.character-section h3 {
+    color: var(--secondary-color);
+    margin-bottom: 1rem;
+}
+
+.first-met {
+    margin-top: 1rem;
+    font-size: 0.9em;
+    color: var(--secondary-color);
+}
+
+/* Character Panel List Styling */
+.characters-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.characters-list .character-item {
+    display: flex;
+    flex-direction: column;  /* Changed from horizontal to vertical layout */
+    padding: 1rem;
+    background-color: var(--light-gray);
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    width: 100%;  /* Ensure full width */
+}
+
+.characters-list .character-item:hover {
+    background-color: var(--medium-gray);
+    transform: translateY(-1px);
+}
+
+.character-item-info {
+    width: 100%;  /* Ensure full width */
+}
+
+.character-item-name {
+    font-weight: 500;
+    color: var(--primary-color);
+    margin-bottom: 0.25rem;  /* Add space between name and details */
+}
+
+.character-item-details {
+    font-size: 0.9em;
+    color: var(--secondary-color);
+}
+
+.character-item-relationship {
+    font-style: italic;
 }

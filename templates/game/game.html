@@ -12,21 +12,25 @@
         <div class="character-info">
             <h2>{{ life.name }}</h2>
             <div class="character-metadata">
-                <div class="metadata-item">
-                    <span class="metadata-label">Difficulty:</span>
-                    <span class="metadata-value">{{ life.difficulty.value }}</span>
+                <div class="character-metadata-group">
+                    <div class="metadata-item">
+                        <span class="metadata-label">Age:</span>
+                        <span class="metadata-value">{{ life.age }}</span>
+                    </div>
+                    <div class="metadata-item">
+                        <span class="metadata-label">Life Stage:</span>
+                        <span class="metadata-value">{{ life.life_stage.value }}</span>
+                    </div>
                 </div>
-                <div class="metadata-item">
-                    <span class="metadata-label">Intensity:</span>
-                    <span class="metadata-value">{{ life.intensity.value }}</span>
-                </div>
-                <div class="metadata-item">
-                    <span class="metadata-label">Age:</span>
-                    <span class="metadata-value">{{ life.age }}</span>
-                </div>
-                <div class="metadata-item">
-                    <span class="metadata-label">Life Stage:</span>
-                    <span class="metadata-value">{{ life.life_stage.value }}</span>
+                <div class="character-metadata-group">
+                    <div class="metadata-item">
+                        <span class="metadata-label">Difficulty:</span>
+                        <span class="metadata-value">{{ life.difficulty.value }}</span>
+                    </div>
+                    <div class="metadata-item">
+                        <span class="metadata-label">Intensity:</span>
+                        <span class="metadata-value">{{ life.intensity.value }}</span>
+                    </div>
                 </div>
             </div>
         </div>
@@ -136,5 +140,5 @@
             <div class="characters-list" style="display: none;"></div>
         </div>
     </div>
-        
+            
 {% endblock %}

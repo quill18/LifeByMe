@@ -1,0 +1,92 @@
+<!-- ./templates/game/character.html -->
+{% extends "master.html" %}
+
+{% block content %}
+<div class="character-container">
+    <div class="character-header">
+        <div class="header-left">
+            <a href="{{ url_for('game.game') }}" class="button primary">Back to Game</a>
+        </div>
+        <div class="header-right">
+            <select id="characterSelect" class="character-select" onchange="loadCharacter(this.value)">
+                <option value="">Select Character...</option>
+                {% for other_char in all_characters %}
+                    <option value="{{ other_char._id }}">{{ other_char.name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+    </div>
+
+    <div class="character-content">
+        <div class="character-main">
+            <h2>{{ character.name }}</h2>
+            <div class="character-metadata">
+                <span class="age">Age {{ character.age }}</span>
+                <span class="gender">{{ character.gender }}</span>
+                <span class="relationship-status {{ character.relationship_status.value.lower() }}">
+                    {{ character.relationship_status.value }}
+                </span>
+            </div>
+        </div>
+
+        <div class="character-section">
+            <h3>Relationship</h3>
+            <div class="relationship-info">
+                {{ character.relationship_description }}
+            </div>
+            <div class="first-met">
+                <span class="label">First Met:</span>
+                <span class="value">{{ character.first_met_context }}</span>
+            </div>
+        </div>
+
+        <div class="character-section">
+            <h3>Physical Description</h3>
+            <div class="physical-description">
+                {{ character.physical_description }}
+            </div>
+        </div>
+
+        <div class="character-section">
+            <h3>Personality</h3>
+            <div class="personality-description">
+                {{ character.personality_description }}
+            </div>
+        </div>
+
+        {% if character.memory_ids %}
+        <div class="character-section">
+            <h3>Shared Memories</h3>
+            <div class="memories-list">
+                {% for memory in memories %}
+                <a href="{{ url_for('game.view_memory', memory_id=memory._id) }}" class="memory-item">
+                    <div class="memory-header">
+                        <span class="memory-title">{{ memory.title }}</span>
+                        <span class="memory-importance">Importance: {{ memory.importance }}</span>
+                    </div>
+                    <div class="memory-details">
+                        <div class="memory-tags">
+                            {% for tag in memory.emotional_tags[:2] %}
+                            <span class="memory-tag">{{ tag }}</span>
+                            {% endfor %}
+                        </div>
+                        <span class="memory-age">Age {{ memory.age_experienced }}</span>
+                    </div>
+                </a>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_head %}
+<script>
+function loadCharacter(characterId) {
+    if (characterId) {
+        window.location.href = "{{ url_for('game.view_character', character_id='') }}" + characterId;
+    }
+}
+</script>
+{% endblock %}

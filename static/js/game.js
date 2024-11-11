@@ -249,7 +249,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         loadMemories();
                         break;
                     case 'characters':
-                        // Add character loading function when implemented
+                        loadCharacters();
                         break;
                 }
             }
@@ -388,5 +388,49 @@ async function loadMemories() {
     } catch (error) {
         console.error('Error loading memories:', error);
         loading.textContent = 'Error loading memories. Please try again.';
+    }
+}
+
+async function loadCharacters() {
+    const panel = document.querySelector('#characters-panel');
+    const loading = panel.querySelector('.loading-placeholder');
+    const charactersList = panel.querySelector('.characters-list');
+
+    try {
+        const response = await fetch('/game/characters', {
+            headers: {
+                'X-CSRFToken': CSRFToken.getToken()
+            }
+        });
+        
+        if (!response.ok) throw new Error('Failed to load characters');
+        
+        const data = await response.json();
+        
+        if (data.characters.length === 0) {
+            charactersList.innerHTML = '<div class="empty-state">No characters found.</div>';
+        } else {
+            // Sort characters alphabetically
+            data.characters.sort((a, b) => a.name.localeCompare(b.name));
+            
+            charactersList.innerHTML = data.characters.map(character => `
+                <div class="character-item" onclick="window.location.href='/game/character/${character.id}'">
+                    <div class="character-item-info">
+                        <div class="character-item-name">${character.name}</div>
+                        <div class="character-item-details">
+                            <span class="character-item-age">Age ${character.age}</span> • 
+                            <span class="character-item-relationship">${character.relationship_type}</span>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+        
+        loading.style.display = 'none';
+        charactersList.style.display = 'block';  // Changed from 'flex' to 'block'
+        
+    } catch (error) {
+        console.error('Error loading characters:', error);
+        loading.textContent = 'Error loading characters. Please try again.';
     }
 }
