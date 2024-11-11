@@ -18,8 +18,6 @@ import re
 
 logger = logging.getLogger(__name__)
 
-gpt_model = "gpt-4o"
-
 @dataclass
 class StoryResponse:
     prompt: str
@@ -80,7 +78,7 @@ def begin_story(life: Life) -> StoryResponse:
         
         # Make API call
         response = client.chat.completions.create(
-            model=gpt_model,
+            model=user.gpt_model,
             messages=[
                 {"role": "system", "content": prompt},
                 {"role": "user", "content": "Begin a new story for this character."}
@@ -175,7 +173,7 @@ def continue_story(life: Life, story: Story, selected_option: str) -> StoryRespo
         print(prompt)
         # Make API call
         response = client.chat.completions.create(
-            model=gpt_model,
+            model=user.gpt_model,
             messages=[
                 {"role": "system", "content": prompt},
                 {"role": "user", "content": f"""
@@ -248,7 +246,7 @@ def conclude_story(life: Life, story: Story, selected_option: str) -> StoryRespo
         
         # Make API call
         response = client.chat.completions.create(
-            model=gpt_model,
+            model=user.gpt_model,
             messages=[
                 {"role": "system", "content": prompt},
                 {"role": "user", "content": f"""
@@ -606,7 +604,7 @@ def generate_memory_from_story(life: Life, story: Story) -> Dict:
         
         # Make API call
         response = client.chat.completions.create(
-            model=gpt_model,
+            model=user.gpt_model,
             messages=[
                 {"role": "system", "content": prompt},
                 {"role": "user", "content": f"""
@@ -844,7 +842,7 @@ For relationship descriptions:
 
         # Make API call
         response = client.chat.completions.create(
-            model=gpt_model,
+            model=user.gpt_model,
             messages=[
                 {"role": "system", "content": prompt},
                 {"role": "user", "content": f"Generate initial cast{' including ' + str(num_siblings) + ' sibling(s)' if num_siblings > 0 else ''}."}

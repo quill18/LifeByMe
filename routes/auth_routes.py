@@ -119,13 +119,17 @@ def register():
     password_confirm = request.form.get('password_confirm', '').strip()
     openai_api_key = request.form.get('openai_api_key', '').strip() or None
 
+    gpt_model = request.form.get('gpt_model', '').strip()
+    custom_model = request.form.get('custom_model', '').strip()
+    final_model = custom_model if gpt_model == 'custom' else gpt_model
+
     errors = validate_registration(username, password, password_confirm)
     if errors:
         return render_template('register.html', errors=errors, csrf_token=generate_csrf())
 
     try:
         ip_address = get_client_ip()
-        user = User.create(username, password, openai_api_key, ip_address)
+        user = User.create(username, password, openai_api_key, ip_address, gpt_model=final_model)
         logger.info(f"New user registered: {username} from IP {ip_address}")
         
         # Auto-login after registration

@@ -26,6 +26,38 @@
             <label for="openai_api_key">OpenAI API Key (Optional)</label>
             <input type="text" id="openai_api_key" name="openai_api_key">
         </div>
+        <div class="form-group">
+            <label>GPT Model</label>
+            <div class="radio-group">
+                <div class="radio-option">
+                    <input type="radio" id="modelGPT4o" name="gpt_model" value="gpt-4o" checked>
+                    <label for="modelGPT4o">
+                        <strong>gpt-4o</strong>
+                        <span>The most advanced and capable model.</span>
+                    </label>
+                </div>
+                <div class="radio-option">
+                    <input type="radio" id="modelGPT4oMini" name="gpt_model" value="gpt-4o-mini">
+                    <label for="modelGPT4oMini">
+                        <strong>gpt-4o-mini</strong>
+                        <span>Faster and more economical, while still maintaining good quality.</span>
+                    </label>
+                </div>
+                <div class="radio-option">
+                    <input type="radio" id="modelCustom" name="gpt_model" value="custom">
+                    <label for="modelCustom">
+                        <strong>Custom Model</strong>
+                        <span>Specify a custom OpenAI model string.</span>
+                    </label>
+                </div>
+            </div>
+        </div>
+        
+        <div class="form-group" id="customModelGroup" style="display: none;">
+            <label for="customModel">Custom Model String</label>
+            <input type="text" id="customModel" name="custom_model">
+        </div>
+        
         <button type="submit" class="button primary">Register</button>
     </form>
     <p class="auth-alternate">

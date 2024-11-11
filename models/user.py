@@ -14,17 +14,19 @@ users = db.users
 
 class User:
     def __init__(self, 
-                 username: str,
-                 password_hash: Optional[str] = None,
-                 openai_api_key: Optional[str] = None,
-                 created_at: Optional[datetime] = None,
-                 last_login: Optional[datetime] = None,
-                 last_login_ip: Optional[str] = None,
-                 _id: Optional[Any] = None):
+                username: str,
+                password_hash: Optional[str] = None,
+                openai_api_key: Optional[str] = None,
+                gpt_model: str = "gpt-4o",  # Add default value
+                created_at: Optional[datetime] = None,
+                last_login: Optional[datetime] = None,
+                last_login_ip: Optional[str] = None,
+                _id: Optional[Any] = None):
         self._id = _id if isinstance(_id, ObjectId) else ObjectId()
         self.username = username
         self.password_hash = password_hash
         self.openai_api_key = openai_api_key
+        self.gpt_model = gpt_model
         self.created_at = created_at or datetime.utcnow()
         self.last_login = last_login
         self.last_login_ip = last_login_ip
@@ -44,6 +46,7 @@ class User:
             'username': self.username,
             'password_hash': self.password_hash,
             'openai_api_key': self.openai_api_key,
+            'gpt_model': self.gpt_model,
             'created_at': self.created_at,
             'last_login': self.last_login,
             'last_login_ip': self.last_login_ip
@@ -115,25 +118,11 @@ class User:
         except Exception as e:
             raise DatabaseError(f"Database error: {str(e)}")
 
-    def change_password(self, new_password: str) -> None:
-        if len(new_password) < Config.MIN_PASSWORD_LENGTH:
-            raise ValueError(f'Password must be at least {Config.MIN_PASSWORD_LENGTH} characters')
-
-        try:
-            result = users.update_one(
-                {'_id': self._id},
-                {
-                    '$set': {
-                        'password_hash': generate_password_hash(new_password)
-                    }
-                }
-            )
-            if not result.modified_count:
-                raise DatabaseError("Failed to change password")
-        except Exception as e:
-            raise DatabaseError(f"Database error: {str(e)}")
-
     def update_openai_key(self, new_key: Optional[str]) -> None:
+        """Update OpenAI API key if different from current key"""
+        if new_key == self.openai_api_key:
+            return  # No update needed if key is the same
+            
         try:
             result = users.update_one(
                 {'_id': self._id},
@@ -143,7 +132,52 @@ class User:
                     }
                 }
             )
-            if not result.modified_count:
-                raise DatabaseError("Failed to update API key")
+            if result.matched_count == 0:  # No document matched
+                raise DatabaseError("User not found")
+            self.openai_api_key = new_key
+        except Exception as e:
+            raise DatabaseError(f"Database error: {str(e)}")
+
+    def update_gpt_model(self, new_model: str) -> None:
+        """Update GPT model if different from current model"""
+        if new_model == self.gpt_model:
+            return  # No update needed if model is the same
+            
+        try:
+            result = users.update_one(
+                {'_id': self._id},
+                {
+                    '$set': {
+                        'gpt_model': new_model
+                    }
+                }
+            )
+            if result.matched_count == 0:  # No document matched
+                raise DatabaseError("User not found")
+            self.gpt_model = new_model
+        except Exception as e:
+            raise DatabaseError(f"Database error: {str(e)}")
+
+    def change_password(self, new_password: str) -> None:
+        """Change password if different from current password"""
+        if len(new_password) < Config.MIN_PASSWORD_LENGTH:
+            raise ValueError(f'Password must be at least {Config.MIN_PASSWORD_LENGTH} characters')
+
+        new_hash = generate_password_hash(new_password)
+        if new_hash == self.password_hash:
+            return  # No update needed if password hash is the same
+            
+        try:
+            result = users.update_one(
+                {'_id': self._id},
+                {
+                    '$set': {
+                        'password_hash': new_hash
+                    }
+                }
+            )
+            if result.matched_count == 0:  # No document matched
+                raise DatabaseError("User not found")
+            self.password_hash = new_hash
         except Exception as e:
             raise DatabaseError(f"Database error: {str(e)}")

@@ -47,5 +47,44 @@
             <button type="submit" class="button primary">Update API Key</button>
         </form>
     </section>
+    <section class="settings-section">
+        <h3>GPT Model Selection</h3>
+        <form action="{{ url_for('user.update_gpt_model') }}" method="post" class="settings-form" id="gptModelForm">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+            <div class="radio-group">
+                <div class="radio-option">
+                    <input type="radio" id="modelGPT4o" name="gpt_model" value="gpt-4o" 
+                           {{ 'checked' if user.gpt_model == 'gpt-4o' }}>
+                    <label for="modelGPT4o">
+                        <strong>gpt-4o</strong>
+                        <span>The most advanced and capable model.</span>
+                    </label>
+                </div>
+                <div class="radio-option">
+                    <input type="radio" id="modelGPT4oMini" name="gpt_model" value="gpt-4o-mini"
+                           {{ 'checked' if user.gpt_model == 'gpt-4o-mini' }}>
+                    <label for="modelGPT4oMini">
+                        <strong>gpt-4o-mini</strong>
+                        <span>Faster and more economical, while still maintaining good quality.</span>
+                    </label>
+                </div>
+                <div class="radio-option">
+                    <input type="radio" id="modelCustom" name="gpt_model" value="custom"
+                           {{ 'checked' if user.gpt_model not in ['gpt-4o', 'gpt-4o-mini'] }}>
+                    <label for="modelCustom">
+                        <strong>Custom Model</strong>
+                        <span>Specify a custom OpenAI model string.</span>
+                    </label>
+                </div>
+            </div>
+            <div class="form-group" id="customModelGroup" style="display: {{ 'block' if user.gpt_model not in ['gpt-4o', 'gpt-4o-mini'] else 'none' }};">
+                <label for="customModel">Custom Model String</label>
+                <input type="text" id="customModel" name="custom_model" 
+                       value="{{ user.gpt_model if user.gpt_model not in ['gpt-4o', 'gpt-4o-mini'] }}">
+            </div>
+            <button type="submit" class="button primary">Update Model</button>
+        </form>
+    </section>
+    
     </div>
 {% endblock %}

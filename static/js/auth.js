@@ -68,4 +68,19 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
     }
+
+    // Handle GPT model radio buttons
+    const modelRadios = document.querySelectorAll('input[name="gpt_model"]');
+    const customModelGroup = document.getElementById('customModelGroup');
+    const customModel = document.getElementById('customModel');
+
+    if (modelRadios && customModelGroup) {
+        modelRadios.forEach(radio => {
+            radio.addEventListener('change', () => {
+                customModelGroup.style.display = radio.value === 'custom' ? 'block' : 'none';
+                customModel.required = radio.value === 'custom';
+            });
+        });
+    }
+
 });
