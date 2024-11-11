@@ -2,6 +2,8 @@
 
 An AI-powered life simulation game created by Martin "quill18" Glaude.
 
+![Screenshot 2024-11-11 125911](https://github.com/user-attachments/assets/1ae9c96a-b56d-42b7-9c0f-c336330f6153)
+
 ## About
 
 LifeByMe is a life simulation game where you create and guide a character through their life journey, starting as a high school student. Each choice you make shapes your character's personality traits, stress levels, and relationships with other characters. The game uses AI (powered by OpenAI's API) to generate rich, contextual stories that respond to your character's current state and history.
