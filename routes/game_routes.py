@@ -15,8 +15,9 @@ from models.game.enums import LifeStage, Intensity, Difficulty
 import bleach
 from typing import Tuple, List
 from models.game.base import Ocean, Trait, Skill
-from models.game.story_ai import begin_story, continue_story, conclude_story, generate_memory_from_story
+from models.game.story_ai import begin_story, continue_story, conclude_story, generate_memory_from_story, generate_initial_cast
 from models.game.memory import Memory
+from models.game.character import Character, RelationshipStatus
 import asyncio
 
 game_bp = Blueprint('game', __name__)
@@ -226,6 +227,16 @@ def new_life():
         
         # Save to database
         life.save()
+
+        # Generate initial cast of characters
+        try:
+            generate_initial_cast(life)
+        except Exception as e:
+            logger.error(f"Error generating initial cast: {str(e)}")
+            return render_template('game/new_life.html',
+                                 errors=['An error occurred while creating your initial cast of characters'],
+                                 form_data=form_data,
+                                 csrf_token=generate_csrf())
         
         # Update session with new life
         db_session = Session.get_by_session_id(session['session_id'])
@@ -432,18 +443,27 @@ def make_memory(story_id):
         # Apply memory effects to life
         current_life.apply_memory(memory)
 
-        # Update character relationships if any
+        # Update characters if any changes
         for char_change in memory_data.get('character_changes', []):
             char_id = ObjectId(char_change['character_id'])
             character = Character.get_by_id(char_id)
             if character and character.life_id == current_life._id:
-                character.update_relationship(
-                    friendship_change=char_change.get('friendship_change', 0),
-                    romance_change=char_change.get('romance_change', 0),
-                    conflict_change=char_change.get('conflict_change', 0)
-                )
+                # Update character descriptions
+                character.physical_description = char_change['physical_description']
+                character.personality_description = char_change['personality_description']
+                character.relationship_description = char_change['relationship_description']
+                
+                # Update status if provided
+                if 'relationship_status' in char_change:
+                    character.update_status(RelationshipStatus(char_change['relationship_status']))
+                
+                # Update last appearance age and life stage
+                character.last_appearance_age = character.age
+                character.last_appearance_life_stage = current_life.life_stage
+                
                 # Add memory to character's memory list
                 character.add_memory(memory._id)
+                character.save()
 
         # Mark story as completed
         story.complete_with_memory(memory._id)

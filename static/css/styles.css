@@ -1456,3 +1456,63 @@ input[type="password"] {
     border-radius: 12px;
     font-size: 0.75rem;
 }
+
+/* Loading State Styles */
+.loading-state {
+    text-align: center;
+    padding: 2rem;
+    background-color: white;
+    border-radius: 8px;
+    margin-top: 1rem;
+}
+
+.loading-spinner {
+    width: 40px;
+    height: 40px;
+    border: 4px solid var(--light-gray);
+    border-top: 4px solid var(--primary-color);
+    border-radius: 50%;
+    margin: 0 auto 1rem;
+    animation: spin 1s linear infinite;
+}
+
+.loading-text {
+    color: var(--dark-gray);
+}
+
+.loading-text p {
+    margin: 0.5rem 0;
+    font-size: 1.1em;
+}
+
+.loading-subtext {
+    font-size: 0.9em;
+    color: var(--secondary-color);
+    animation: pulse 2s infinite;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+@keyframes pulse {
+    0% { opacity: 0.6; }
+    50% { opacity: 1; }
+    100% { opacity: 0.6; }
+}
+
+/* Disabled form styles */
+input:disabled, 
+textarea:disabled, 
+select:disabled,
+button:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+}
+
+.radio-option input[type="radio"]:disabled + label,
+.radio-option-horizontal input[type="radio"]:disabled + label {
+    opacity: 0.7;
+    cursor: not-allowed;
+}

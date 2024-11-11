@@ -1,5 +1,3 @@
-// ./static/js/new_life.js
-
 document.addEventListener('DOMContentLoaded', () => {
     const customDirectionsExamples = [
         "I want a life with supernatural elements and magic.",
@@ -20,10 +18,6 @@ document.addEventListener('DOMContentLoaded', () => {
         "I want to explore artistic expression and creativity.",
         "I want to focus on family relationships and dynamics.",
         "I want to become a famous musician and deal with celebrity life.",
-        //"My character is part of a close-knit immigrant community.",
-        //"I want to explore themes of friendship and loyalty.",
-        //"My character is dedicated to helping others.",
-        //"I want to explore themes of personal growth and self-discovery.",
     ];
 
     // Form elements
@@ -40,7 +34,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const directionsCount = document.getElementById('directionsCount');
 
     // Handle gender selection
-    
     genderInputs.forEach(input => {
         input.addEventListener('change', () => {
             if (input.value === 'Custom') {
@@ -81,8 +74,6 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function typeText(text, current = 0) {
-        //if (customDirections.value) return; // Don't type if user has entered text
-
         if (current < text.length) {
             customDirections.placeholder = text.slice(0, current + 1);
             typingTimer = setTimeout(() => typeText(text, current + 1), 50);
@@ -92,8 +83,6 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function startNewExample() {
-        //if (customDirections.value) return; // Don't start if user has entered text
-
         const newExample = getRandomExample();
         currentExample = newExample;
         customDirections.placeholder = '';
@@ -103,48 +92,78 @@ document.addEventListener('DOMContentLoaded', () => {
     // Start the first example
     startNewExample();
 
-    // Clear timers if user starts typing
-    /*customDirections.addEventListener('input', () => {
-        if (typingTimer) clearTimeout(typingTimer);
-        if (waitTimer) clearTimeout(waitTimer);
-    });*/
+    if (form) {
+        form.addEventListener('submit', (e) => {
+            let isValid = true;
+    
+            // Name validation
+            if (nameInput.value.trim().length === 0) {
+                isValid = false;
+                ValidationUtils.showError(nameInput, 'Name is required');
+            }
+    
+            // Custom gender validation
+            if (form.querySelector('input[name="gender"]:checked')?.value === 'Custom' && 
+                customGenderInput.value.trim().length === 0) {
+                isValid = false;
+                ValidationUtils.showError(customGenderInput, 'Custom gender description is required');
+            }
+    
+            // Intensity validation
+            if (!form.querySelector('input[name="intensity"]:checked')) {
+                isValid = false;
+                ValidationUtils.showError(
+                    form.querySelector('.radio-group'),
+                    'Please select an intensity level'
+                );
+            }
+    
+            // Difficulty validation
+            if (!form.querySelector('input[name="difficulty"]:checked')) {
+                isValid = false;
+                ValidationUtils.showError(
+                    form.querySelector('.radio-group'),
+                    'Please select a difficulty level'
+                );
+            }
+    
+            if (!isValid) {
+                e.preventDefault();
+                return;
+            }
+    
+            // Find just the buttons container
+            const formActions = form.querySelector('.form-actions');
+            if (!formActions) return;
+    
+            // Clear any previous error messages
+            ValidationUtils.clearErrors(form);
+            
+            // Replace only the buttons with the loading state
+            formActions.innerHTML = `
+                <div class="loading-state">
+                    <div class="loading-spinner"></div>
+                    <div class="loading-text">
+                        <p>Please wait while we generate your new life...</p>
+                        <p class="loading-subtext">Creating your family, teachers, and classmates...</p>
+                    </div>
+                </div>`;
+            
+            // Make text inputs readonly but NOT disabled
+            form.querySelectorAll('input[type="text"], textarea').forEach(input => {
+                input.readOnly = true;
+            });
 
-    // Form validation
-    form.addEventListener('submit', (e) => {
-        let isValid = true;
+            // Don't disable radio buttons at all, just prevent interaction visually
+            form.querySelectorAll('.radio-option, .radio-option-horizontal').forEach(option => {
+                option.style.opacity = '0.7';
+                option.style.pointerEvents = 'none';
+            });
 
-        // Name validation
-        if (nameInput.value.trim().length === 0) {
-            isValid = false;
-            ValidationUtils.showError(nameInput, 'Name is required');
-        }
-
-        // Custom gender validation
-        if (genderSelect.value === 'Custom' && customGenderInput.value.trim().length === 0) {
-            isValid = false;
-            ValidationUtils.showError(customGenderInput, 'Custom gender description is required');
-        }
-
-        // Intensity validation
-        if (!form.querySelector('input[name="intensity"]:checked')) {
-            isValid = false;
-            ValidationUtils.showError(
-                form.querySelector('.radio-group'),
-                'Please select an intensity level'
-            );
-        }
-
-        // Difficulty validation
-        if (!form.querySelector('input[name="difficulty"]:checked')) {
-            isValid = false;
-            ValidationUtils.showError(
-                form.querySelector('.radio-group'),
-                'Please select a difficulty level'
-            );
-        }
-
-        if (!isValid) {
-            e.preventDefault();
-        }
-    });
+            // Only disable the submit and cancel buttons
+            form.querySelectorAll('button[type="submit"], .button.secondary').forEach(button => {
+                button.disabled = true;
+            });
+        });
+    }
 });

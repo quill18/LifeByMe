@@ -6,6 +6,8 @@ class LifeStage(Enum):
     COLLEGE = "College"
     CAREER = "Career"
     RETIRED = "Retired"
+    CHILDHOOD = "Childhood"
+
 
 class Intensity(Enum):
     LIGHT = "Light"

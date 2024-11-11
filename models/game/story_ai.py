@@ -10,6 +10,9 @@ from .memory import Memory
 from models.user import User
 from models.game.enums import LifeStage, Intensity, Difficulty
 from models.game.story import Story
+from models.game.character import Character, RelationshipStatus
+from bson import ObjectId
+import random
 import re
 
 
@@ -41,9 +44,16 @@ STORY_TOOLS = [{
                         "type": "string"
                     },
                     "description": "List of 4 response options if the story continues, empty if this is the conclusion"
+                },
+                "character_ids": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "description": "List of character IDs for characters who appear in this story"
                 }
             },
-            "required": ["story_text", "options"]
+            "required": ["story_text", "options", "character_ids"]
         }
     }
 }]
@@ -65,7 +75,6 @@ def begin_story(life: Life) -> StoryResponse:
         prompt = build_story_begin_prompt(life)
 
         print(prompt)
-
         
         # Make API call
         response = client.chat.completions.create(
@@ -90,10 +99,21 @@ def begin_story(life: Life) -> StoryResponse:
             cleaned_args = clean_text_for_json(tool_call.function.arguments)
             result = json.loads(cleaned_args)
         
-        # Create and return StoryResponse - clean the text values
+        # Create Story object
+        story = Story(
+            life_id=life._id,
+            prompt=prompt,
+            beats=[(clean_text_for_json(result["story_text"]), None)],
+            current_options=[clean_text_for_json(opt) for opt in result["options"]],
+            character_ids=[ObjectId(char_id) for char_id in result["character_ids"]]
+        )
+        story.save()
+        
+        # Create and return StoryResponse
         return StoryResponse(
             story_text=clean_text_for_json(result["story_text"]),
-            options=[clean_text_for_json(opt) for opt in result["options"]]        )
+            options=[clean_text_for_json(opt) for opt in result["options"]]
+        )
         
     except json.JSONDecodeError as e:
         logger.error(f"JSON Decode error: {str(e)}")
@@ -105,7 +125,6 @@ def begin_story(life: Life) -> StoryResponse:
         logger.error(f"Error generating story: {str(e)}")
         print(result)
         raise
-
 
 
 def clean_text_for_json(text: str) -> str:
@@ -147,7 +166,7 @@ def continue_story(life: Life, story: Story, selected_option: str) -> StoryRespo
         ])
         
         # Build prompt
-        prompt = build_story_continue_prompt(life)
+        prompt = build_story_continue_prompt(life, story)
         
         print("Making API Call")
         print(prompt)
@@ -219,7 +238,7 @@ def conclude_story(life: Life, story: Story, selected_option: str) -> StoryRespo
         ])
         
         # Build prompt
-        prompt = build_story_conclusion_prompt(life)
+        prompt = build_story_conclusion_prompt(life, story)
         
         # Make API call
         response = client.chat.completions.create(
@@ -288,21 +307,36 @@ def build_character_summary(life: Life) -> str:
         
     return "\n".join(filter(None, summary))
 
-def build_intensity_guidelines(intensity: Intensity) -> str:
+def build_intensity_guidelines(intensity: Intensity, difficulty: Difficulty) -> str:
     """Get detailed intensity guidelines based on user selection"""
+
+    intensity_text = ""
+
     if intensity == Intensity.LIGHT:
-        return """This story should maintain a LIGHT intensity level. Keep the tone optimistic and uplifting. Focus on positive personal growth and achievements. Handle conflicts through communication and understanding. Avoid topics that could be triggering or distressing. Use humor and warmth appropriately. Keep any romance at a sweet, innocent level."""
+        intensity_text =  """This story should maintain a LIGHT intensity level. Keep the tone optimistic and uplifting. Focus on positive personal growth and achievements. Handle conflicts through communication and understanding. Avoid topics that could be triggering or distressing. Use humor and warmth appropriately. Keep any romance at a sweet, innocent level."""
     
     elif intensity == Intensity.MODERATE:
-        return """This story should maintain a MODERATE intensity level. Balance lighter moments with meaningful challenges. Allow for both success and setbacks. Include realistic interpersonal conflicts. Touch on serious topics without dwelling on them. Show consequences for actions while maintaining hope. Handle romance at a realistic but tasteful level. Allow for some anxiety and stress in reasonable amounts. Keep darker elements brief and resolution-focused."""
+        intensity_text =  """This story should maintain a MODERATE intensity level. Balance lighter moments with meaningful challenges. Allow for both success and setbacks. Include realistic interpersonal conflicts. Touch on serious topics without dwelling on them. Show consequences for actions while maintaining hope. Handle romance at a realistic but tasteful level. Allow for some anxiety and stress in reasonable amounts. Keep darker elements brief and resolution-focused."""
     
     else:  # GRITTY
-        return """This story should maintain a GRITTY intensity level. Present realistic challenges without guaranteed resolution. Allow for meaningful failures and their consequences. Explore complex emotional and interpersonal situations. Address serious real-world issues directly. Handle romance, relationships, and sexuality realistically. Include genuine struggles with identity and values. Don't shy away from internal conflicts and doubts. Remember that growth can come from difficulty."""
+        intensity_text =  """This story should maintain a GRITTY intensity level. Present realistic challenges without guaranteed resolution. Allow for meaningful failures and their consequences. Explore complex emotional and interpersonal situations. Address serious real-world issues directly. Handle romance, relationships, and sexuality realistically. Include genuine struggles with identity and values. Don't shy away from internal conflicts and doubts. Remember that growth can come from difficulty."""
+
+    if difficulty == Difficulty.STORY:
+        intensity_text += """\n\nDifficulty is set to STORY mode. The character should generally succeed at their chosen actions, though the manner and consequences of success may vary. Failures should be rare and primarily serve character development rather than creating serious setbacks. Provide clear paths to achieve desired outcomes."""
+
+    elif difficulty == Difficulty.BALANCED:
+        intensity_text += """\n\nDifficulty is set to BALANCED mode. Success should depend on how well the chosen action aligns with the character's traits and previous development. Actions that go against type should be notably harder to succeed at. Include a mix of successes and setbacks, with neither dominating the narrative."""
+
+    else:  # CHALLENGING
+        intensity_text += """\n\nDifficulty is set to CHALLENGING mode. Success should be earned and never guaranteed. Actions that go against the character's established traits can still succeed, but at the cost of personal stress. Create meaningful obstacles that require careful choice selection. Let failures have lasting impact, though allow for eventual recovery and growth."""
+
+
+    return intensity_text
 
 def build_base_prompt(life: Life) -> str:
     """Build the base system prompt for all story interactions"""
     character_summary = build_character_summary(life)
-    intensity_guidelines = build_intensity_guidelines(life.intensity)
+    intensity_guidelines = build_intensity_guidelines(life.intensity, life.difficulty)
     
     return f"""You are a life simulation game's story generation system. Your role is to create engaging, contextually appropriate story beats that feel natural and personal to the character. Use direct, active, language - preferring a simple and straightforward writing style rather than flowerly or prosaic text.
 
@@ -343,11 +377,18 @@ def build_story_begin_prompt(life: Life) -> str:
     """Build the complete prompt for starting a new story"""
     base_prompt = build_base_prompt(life)
     
+    # Get character information
+    characters_json = Character.format_characters_for_ai()
+
     begin_specific = f"""
+Available Characters:
+{characters_json}
+   
 Story Beginning Guidelines:
 - Start with a clear, immediate situation
 - Present something slightly unusual or interesting
 - Avoid starting with internal monologue
+- Consider which characters should be included. Make sure they are appropriate for the scene, setting, and time of day. Consider if you should include close friends or if the story should include less close or even antagonistic characters. It could even be time for a scene with no characters other than {life.name} by themselves. In the characters_ids field, always include one extra character not present in this opening scene but that might make an appearance later.
 
 Your response must use the provided function to return:
 - A clear story_text describing the initial situation. If {life.name} is highly stressed (> 70), the situation should reflect that and feel more challenging.
@@ -356,11 +397,18 @@ Your response must use the provided function to return:
 
     return base_prompt + begin_specific
 
-def build_story_continue_prompt(life: Life) -> str:
+def build_story_continue_prompt(life: Life, story: Story) -> str:
     """Build the prompt for continuing a story"""
     base_prompt = build_base_prompt(life)
+
+    # Get character information for characters involved in this story
+    characters_json = Character.format_characters_for_ai(story.character_ids)
+
     
     continue_specific = f"""
+Characters in this story:
+{characters_json}
+
 Story Continuation Guidelines:
 - React naturally to the player's choice
 - Show immediate and potential long-term consequences
@@ -375,11 +423,16 @@ Your response must use the provided function to return:
     return base_prompt + continue_specific
 
 
-def build_story_conclusion_prompt(life: Life) -> str:
+def build_story_conclusion_prompt(life: Life, story: Story) -> str:
     """Build the prompt for concluding a story"""
     base_prompt = build_base_prompt(life)
+
+    characters_json = Character.format_characters_for_ai(story.character_ids)
     
     continue_specific = """
+Characters in this story:
+{characters_json}
+
 Story Conclusion Guidelines:
 - React naturally to the player's choice
 - Show immediate and potential long-term consequences
@@ -391,12 +444,6 @@ Your response must use the provided function to return:
 - Story text concluding this sequence
 - ZERO response options"""
     return base_prompt + continue_specific
-
-
-
-
-
-
 
 
 
@@ -470,29 +517,32 @@ MEMORY_TOOLS = [{
                         "required": ["name", "value"]
                     }
                 },
-                #"skill_changes": {
-                #    "type": "array",
-                #    "description": "One or two skills that have been created or modified by this memory",
-                #    "items": {
-                #        "type": "object",
-                #        "properties": {
-                #            "name": {"type": "string"},
-                #            "value": {"type": "integer", "minimum": -2, "maximum": 2}
-                #        },
-                #        "required": ["name", "value"]
-                #    }
-                #},
                 "character_changes": {
                     "type": "array",
                     "items": {
                         "type": "object",
                         "properties": {
                             "character_id": {"type": "string"},
-                            "friendship_change": {"type": "integer", "minimum": -2, "maximum": 2},
-                            "romance_change": {"type": "integer", "minimum": -2, "maximum": 2},
-                            "conflict_change": {"type": "integer", "minimum": -2, "maximum": 2}
+                            "physical_description": {
+                                "type": "string",
+                                "description": "Updated physical description of the character (optional). Many stories won't change the physical description of a character, but this is helpful if the character has aged or followed the player into a new life stage since the last interaction"
+                            },
+                            "personality_description": {
+                                "type": "string",
+                                "description": "Updated personality description based on interactions"
+                            },
+                            "relationship_description": {
+                                "type": "string",
+                                "description": "Updated description of relationship to the player character"
+                            },
+                            "relationship_status": {
+                                "type": "string",
+                                "enum": ["Active", "Departed", "Deceased"],
+                                "description": "Updated status of the relationship (optional)"
+                            }
                         },
-                        "required": ["character_id"]
+                        "required": ["character_id", 
+                                   "personality_description", "relationship_description"]
                     }
                 },
                 "stress_change": {
@@ -629,3 +679,230 @@ Guidelines for Memory Generation:
    - Think about long-term character development
 
 Process the story and create a memory that captures both what happened and how it affected {life.name}."""
+
+
+GENERATE_CAST_TOOLS = [{
+    "type": "function",
+    "function": {
+        "name": "create_initial_cast",
+        "description": "Create the initial cast of characters for a new life",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "parents": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "name": {"type": "string"},
+                            "age": {"type": "integer", "minimum": 35, "maximum": 55},
+                            "gender": {"type": "string"},
+                            "physical_description": {"type": "string"},
+                            "personality_description": {"type": "string"},
+                            "relationship_description": {"type": "string"}
+                        },
+                        "required": ["name", "age", "gender", "physical_description", 
+                                   "personality_description", "relationship_description"]
+                    },
+                    "minItems": 2,
+                    "maxItems": 2
+                },
+                "siblings": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "name": {"type": "string"},
+                            "age": {"type": "integer", "minimum": 13, "maximum": 19},
+                            "gender": {"type": "string"},
+                            "physical_description": {"type": "string"},
+                            "personality_description": {"type": "string"},
+                            "relationship_description": {"type": "string"}
+                        },
+                        "required": ["name", "age", "gender", "physical_description", 
+                                   "personality_description", "relationship_description"]
+                    }
+                },
+                "teachers": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "name": {"type": "string"},
+                            "age": {"type": "integer", "minimum": 25, "maximum": 65},
+                            "gender": {"type": "string"},
+                            "physical_description": {"type": "string"},
+                            "personality_description": {"type": "string"},
+                            "relationship_description": {"type": "string"}
+                        },
+                        "required": ["name", "age", "gender", "physical_description", 
+                                   "personality_description", "relationship_description"]
+                    },
+                    "minItems": 3,
+                    "maxItems": 3
+                },
+                "classmates": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "name": {"type": "string"},
+                            "age": {"type": "integer", "minimum": 15, "maximum": 17},
+                            "gender": {"type": "string"},
+                            "physical_description": {"type": "string"},
+                            "personality_description": {"type": "string"},
+                            "relationship_description": {"type": "string"}
+                        },
+                        "required": ["name", "age", "gender", "physical_description", 
+                                   "personality_description", "relationship_description"]
+                    },
+                    "minItems": 6,
+                    "maxItems": 6
+                }
+            },
+            "required": ["parents", "teachers", "classmates"]
+        }
+    }
+}]
+
+def generate_initial_cast(life: Life) -> List[Character]:
+    """Generate the initial cast of characters for a new life"""
+    logger.info(f"Generating initial cast for life {life._id}")
+    
+    try:
+        # Get API key from user profile
+        user = User.get_by_id(life.user_id)
+        if not user or not user.openai_api_key:
+            raise ValueError("No OpenAI API key available")
+
+        # Initialize OpenAI client
+        client = OpenAI(api_key=user.openai_api_key)
+        
+        # Determine number of siblings
+        num_siblings = random.randint(0, 2)
+
+        character_summary = build_character_summary(life)
+        intensity_guidelines = build_intensity_guidelines(life.intensity, life.difficulty)
+    
+
+        
+        # Build the prompt
+        sibling_text = f" and {num_siblings} sibling{'s' if num_siblings != 1 else ''}" if num_siblings > 0 else ""
+        prompt = f"""You are a life simulation game's story generation system. Your role is to create engaging, contextually appropriate
+story elements that feel natural and personal to the character. Use direct, active, language - preferring a simple and straightforward writing
+style rather than flowerly or prosaic text.
+
+Player Character Information:
+{character_summary}
+
+Intensity Guidelines: {intensity_guidelines}
+
+Generate the initial cast of characters for {life.name}'s life. {life.name} is a {life.age}-year-old {life.gender} 
+who just moved to a new town and is starting their Junior year (grade 11) at Quillington High School in a typical mid-size American city.
+Create a cast including parents{sibling_text}, teachers, and classmates that {life.name} will meet on their first day. Consider the Difficulty and Intensity of the story when generating the cast of characters. Consider if familial relationships will be positive, or more complicated. Consider if the teachers will be more supportive/friendly, or more overworked/jaded. Classmates should be diverse in personalities and interests. Make some classmates more open to {life.name} and others less so, weighted by the game difficulty and intensity.
+
+Character Guidelines:
+1. Parents should feel like a realistic family unit with {life.name}. Depending on Difficulty & Intensity, this can range from more idealistic & supportive to complicated and tense.
+2. Teachers should represent different subjects and teaching styles.
+
+For relationship descriptions:
+- Parents/Siblings: Describe the existing family dynamic. {life.name} has {num_siblings} siblings.
+- Teachers: Specify that {life.name} has not yet met them, then describe how they will likely act upon first meeting {life.name}
+- Classmates: Specify that {life.name} has not yet met them, then describe how they will likely act upon first meeting {life.name}"""
+
+        print(prompt)
+
+        # Make API call
+        response = client.chat.completions.create(
+            model=gpt_model,
+            messages=[
+                {"role": "system", "content": prompt},
+                {"role": "user", "content": f"Generate initial cast{' including ' + str(num_siblings) + ' sibling(s)' if num_siblings > 0 else ''}."}
+            ],
+            tools=GENERATE_CAST_TOOLS,
+            tool_choice={"type": "function", "function": {"name": "create_initial_cast"}}
+        )
+
+        # Parse response
+        tool_call = response.choices[0].message.tool_calls[0]
+        result = json.loads(tool_call.function.arguments)
+
+        print(result)
+
+        # Create characters
+        characters = []
+        
+        # Process parents
+        for parent_data in result["parents"]:
+            characters.append(Character(
+                life_id=life._id,
+                name=parent_data["name"],
+                age=parent_data["age"],
+                gender=parent_data["gender"],
+                physical_description=parent_data["physical_description"],
+                personality_description=parent_data["personality_description"],
+                relationship_description=parent_data["relationship_description"],
+                first_met_context="Family",
+                first_met_life_stage=LifeStage.CHILDHOOD,
+                last_appearance_age=parent_data["age"],
+                last_appearance_life_stage=LifeStage.HIGH_SCHOOL
+            ))
+
+        # Process siblings if any
+        if num_siblings > 0 and "siblings" in result:
+            for sibling_data in result["siblings"][:num_siblings]:  # Limit to requested number
+                characters.append(Character(
+                    life_id=life._id,
+                    name=sibling_data["name"],
+                    age=sibling_data["age"],
+                    gender=sibling_data["gender"],
+                    physical_description=sibling_data["physical_description"],
+                    personality_description=sibling_data["personality_description"],
+                    relationship_description=sibling_data["relationship_description"],
+                    first_met_context="Family",
+                    first_met_life_stage=LifeStage.CHILDHOOD,
+                    last_appearance_age=sibling_data["age"],
+                    last_appearance_life_stage=LifeStage.HIGH_SCHOOL
+                ))
+
+        # Process teachers
+        for teacher_data in result["teachers"]:
+            characters.append(Character(
+                life_id=life._id,
+                name=teacher_data["name"],
+                age=teacher_data["age"],
+                gender=teacher_data["gender"],
+                physical_description=teacher_data["physical_description"],
+                personality_description=teacher_data["personality_description"],
+                relationship_description=teacher_data["relationship_description"],
+                first_met_context="First day of school at Quillington High",
+                first_met_life_stage=LifeStage.HIGH_SCHOOL,
+                last_appearance_age=teacher_data["age"],
+                last_appearance_life_stage=LifeStage.HIGH_SCHOOL
+            ))
+
+        # Process classmates
+        for classmate_data in result["classmates"]:
+            characters.append(Character(
+                life_id=life._id,
+                name=classmate_data["name"],
+                age=classmate_data["age"],
+                gender=classmate_data["gender"],
+                physical_description=classmate_data["physical_description"],
+                personality_description=classmate_data["personality_description"],
+                relationship_description=classmate_data["relationship_description"],
+                first_met_context="First day of school at Quillington High",
+                first_met_life_stage=LifeStage.HIGH_SCHOOL,
+                last_appearance_age=classmate_data["age"],
+                last_appearance_life_stage=LifeStage.HIGH_SCHOOL
+            ))
+
+        # Save all characters
+        for character in characters:
+            character.save()
+
+        return characters
+
+    except Exception as e:
+        logger.error(f"Error generating initial cast: {str(e)}")
+        raise

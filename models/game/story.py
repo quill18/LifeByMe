@@ -33,6 +33,8 @@ class Story:
     created_at: datetime = field(default_factory=datetime.utcnow)
     last_updated: datetime = field(default_factory=datetime.utcnow)
     _id: ObjectId = field(default_factory=ObjectId)
+    character_ids: List[ObjectId] = field(default_factory=list)
+
 
     def to_dict(self) -> Dict:
         """Convert Story to dictionary for database storage"""
@@ -44,7 +46,8 @@ class Story:
             'current_options': self.current_options,
             'status': self.status.value,
             'created_at': self.created_at,
-            'last_updated': self.last_updated
+            'last_updated': self.last_updated,
+            'character_ids': [str(char_id) for char_id in self.character_ids]
         }
         
         if self.memory_title:
@@ -73,7 +76,8 @@ class Story:
             memory_params=data.get('memory_params'),
             resulting_memory_id=data.get('resulting_memory_id'),
             created_at=data.get('created_at', datetime.utcnow()),
-            last_updated=data.get('last_updated', datetime.utcnow())
+            last_updated=data.get('last_updated', datetime.utcnow()),
+            character_ids=[ObjectId(id_str) for id_str in data.get('character_ids', [])]
         )
 
     def save(self) -> None:
