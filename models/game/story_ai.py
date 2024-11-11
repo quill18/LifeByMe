@@ -40,7 +40,7 @@ STORY_TOOLS = [{
                     "items": {
                         "type": "string"
                     },
-                    "description": "List of 3 response options if the story continues, empty if this is the conclusion"
+                    "description": "List of 4 response options if the story continues, empty if this is the conclusion"
                 }
             },
             "required": ["story_text", "options"]
@@ -321,25 +321,22 @@ Story Guidelines:
 2. Consider stress levels:
    - Current stress affects emotional reactions
    - High stress (>70) makes challenges harder. When highly stress, consider offering options that represent a "mental breakdown" inline with a character's traits that might provide a large stress relief even at the cost of a negative outcome to the story. (e.g. a high school student deciding to blow off studying for an exame to play video games instead)
-   - Low stress (<30) allows for more resilient responses, including opportunities to push the characters limits (even counter to traits) for greater success
+   - Low stress (<30) allows for more ambitious responses, including opportunities to push the characters limits (even counter to traits) for greater success but higher stress generation
 
 3. Story elements should:
    - Feel natural and age-appropriate
    - Be creative and varied. Avoid duplicating events similar to those already in Memories
-   - Include small details that make the scene feel real
    - Consider the character's life stage and circumstances
 
 4. Create opportunities for:
    - {life.name}'s character growth
    - Relationship development
-   - Skill improvement
+   - Secondary skill development
    - Memory formation
 
-5. Always maintain the selected intensity level - never exceed it
+5. Limit the story text length of each beat to a single short paragraph. Make sure the story_text doesn't include the options
 
-6. Limit the story text length of each beat to a single paragraph. Make sure the story_text doesn't include the options
-
-7. Stories will occur over three beats, representing a beginning, middle, and conclusion"""
+6. Stories will occur over three beats, representing a beginning, middle, and conclusion"""
 
 
 def build_story_begin_prompt(life: Life) -> str:
@@ -354,7 +351,7 @@ Story Beginning Guidelines:
 
 Your response must use the provided function to return:
 - A clear story_text describing the initial situation. If {life.name} is highly stressed (> 70), the situation should reflect that and feel more challenging.
-- Separate from the story_text, also return 3 distinct response options that {life.name} could take. Make options feel meaningfully different and could lead the story in different directions. Options that align with {life.name}'s traits may feel comfortable and reduce stress. Options that conflict with {life.name}'s traits may provide opportunites for change, but could cause stress. Include at least one option that correlates to {life.name}'s personality and at least one option that conflicts with {life.name}'s personality.
+- Separate from the story_text, also return 4 distinct response options that {life.name} could take. Make options feel meaningfully different and could lead the story in different directions. Options that align with {life.name}'s traits may feel comfortable and reduce stress. Options that conflict with {life.name}'s traits may provide opportunites for change, but could cause stress. Include at least one option that correlates to {life.name}'s personality and at least one option that conflicts with {life.name}'s personality.
 - DO NOT mentioning the options in the main story_text as it would be redundant"""
 
     return base_prompt + begin_specific
@@ -373,7 +370,7 @@ Story Continuation Guidelines:
 
 Your response must use the provided function to return:
 - A clear story_text describing what happened based on the previous choice made
-- Separate from the story_text, also return 3 distinct response options that {life.name} could take. Make options feel meaningfully different and include a mix of options that both align with and run counter to various personality traits. Include one option that seems less likely to 'successfully' resolve the situation, but leans more heavily into the player characters's traits in a way that might reduce stress.
+- Separate from the story_text, also return 4 distinct response options that {life.name} could take. Make options feel meaningfully different and include a mix of options that both align with and run counter to various personality traits. Include one option that seems less likely to 'successfully' resolve the situation, but leans more heavily into the player characters's traits in a way that might reduce stress.
 - DO NOT mentioning the options in the main story_text as it would be redundant"""
     return base_prompt + continue_specific
 
@@ -422,14 +419,14 @@ MEMORY_TOOLS = [{
                 "importance": {
                     "type": "integer",
                     "minimum": 1,
-                    "maximum": 10,
-                    "description": "How important this memory is (1-10)"
+                    "maximum": 3,
+                    "description": "How important this memory is (1-3)"
                 },
                 "permanence": {
                     "type": "integer",
                     "minimum": 1,
-                    "maximum": 10,
-                    "description": "How permanent this memory is (1-10)"
+                    "maximum": 3,
+                    "description": "How permanent this memory is (1-3)"
                 },
                 "emotional_tags": {
                     "type": "array",
@@ -448,7 +445,7 @@ MEMORY_TOOLS = [{
                 },
                 "impact_explanation": {
                     "type": "string",
-                    "description": "Detailed explanation of why the memory affects traits, skills, and stress levels the way it does"
+                    "description": "Brief explanation of why the memory affects traits, skills, and stress levels the way it does - and why you choose the Importance and Permanence you did"
                 },
                 "ocean_changes": {
                     "type": "object",
@@ -463,6 +460,7 @@ MEMORY_TOOLS = [{
                 },
                 "trait_changes": {
                     "type": "array",
+                    "description": "One or two secondary traits that have been created or modified by this memory",
                     "items": {
                         "type": "object",
                         "properties": {
@@ -472,17 +470,18 @@ MEMORY_TOOLS = [{
                         "required": ["name", "value"]
                     }
                 },
-                "skill_changes": {
-                    "type": "array",
-                    "items": {
-                        "type": "object",
-                        "properties": {
-                            "name": {"type": "string"},
-                            "value": {"type": "integer", "minimum": -2, "maximum": 2}
-                        },
-                        "required": ["name", "value"]
-                    }
-                },
+                #"skill_changes": {
+                #    "type": "array",
+                #    "description": "One or two skills that have been created or modified by this memory",
+                #    "items": {
+                #        "type": "object",
+                #        "properties": {
+                #            "name": {"type": "string"},
+                #            "value": {"type": "integer", "minimum": -2, "maximum": 2}
+                #        },
+                #        "required": ["name", "value"]
+                #    }
+                #},
                 "character_changes": {
                     "type": "array",
                     "items": {
@@ -606,9 +605,8 @@ Guidelines for Memory Generation:
 1. Memory Creation:
    - Generate a concise but meaningful title
    - Write a clear, specific description that captures the key moments
-   - Importance (1-10) should reflect how much this event matters to {life.name}. 1=absolute triviality that is only worth noting for story consistency. 5=something that might surface one a month. 10=something of critical importance that weighs heavily on the mind even if only temporarily
-   - Permanence (1-10) should reflect how long this memory will matter. 1=short term, only matters for the current season (e.g. an upcoming test, a recent insult). 5=matters throughout the current life stage (e.g. meeting someone new, winning a school debate). 10=permanent core memory, never forgotten (e.g. death of a friend, first kiss)
-   - For example: Failing or passing an exam at school could be immediately very important (Importance 10), but be a fleeting memory that won't matter next season (Permanence 1). Getting a pet would be relatively meaningful but not affect many day-to-day events (Importance 6) and be something with fairly long-term effects (Permanence 8).
+   - Importance (1-3) should reflect how much this event matters to {life.name}. 1=dealing with typical life events (e.g. going to a party, completing a homework assignment). 2=a significant change in {life.name}'s life (e.g. winning a major award, making a new friend). 3=a critical, life-changing event (e.g. death of a friend, first kiss)
+   - Permanence (1-3) should reflect how long this memory will matter. 1=short term, only matters for the current year. 2=matters throughout the current life stage. 3=permanent core memory, never forgotten
    - Tags should be specific and meaningful
 
 2. Impact Guidelines:
@@ -616,8 +614,8 @@ Guidelines for Memory Generation:
    - Consider both direct effects and subtle influences
    - Not every story needs to affect every aspect
    - Changes should feel natural given the story events
-   - One new secondary trait can be suggested if appropriate, and it can start from a value from +2 to -2
-   - Stress changes can range from -50 to +50. Success level of the conclusion has an impact on stress, but the biggest consideration should be if the choices the players made were aligned with the characters traits (doing what comes "naturally" isn't stressful) or if the choices run counter to the character's traits (especially the OCEAN traits), because going against one's nature is stressful even if it leads to character development.
+   - Modify or create one or two secondary traits. Secondary traits are more specific and focused than OCEAN traits. Change (or initalize) the value from +2 to -2.
+   - Stress changes can range from -50 to +50. Consider the choices the player made, their risk level, and how much they diverge from the character's traits. Consider the success or failure of the event. Consider any positive or negative reactions to the player's actions.
 
 3. Tag Selection:
    - Emotional tags should reflect the character's feelings

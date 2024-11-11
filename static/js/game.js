@@ -205,3 +205,188 @@ document.addEventListener('click', async (e) => {
         }
     }
 });
+
+
+document.addEventListener('DOMContentLoaded', () => {
+    // Panel functionality
+    const actionButtons = document.querySelectorAll('.action-button');
+    const panels = document.querySelectorAll('.slide-panel');
+    const closeButtons = document.querySelectorAll('.close-panel');
+    
+    // Create overlay element
+    const overlay = document.createElement('div');
+    overlay.className = 'panel-overlay';
+    document.body.appendChild(overlay);
+    
+    function closeAllPanels() {
+        panels.forEach(panel => panel.classList.remove('active'));
+        overlay.classList.remove('active');
+    }
+    
+    // Handle action button clicks
+    actionButtons.forEach(button => {
+        button.addEventListener('click', () => {
+            const panelId = `${button.dataset.panel}-panel`;
+            const panel = document.getElementById(panelId);
+            
+            // Close any open panels first
+            closeAllPanels();
+            
+            // Open the selected panel
+            if (panel) {
+                panel.classList.add('active');
+                overlay.classList.add('active');
+                
+                // Load the appropriate content
+                switch (button.dataset.panel) {
+                    case 'traits':
+                        loadTraits();
+                        break;
+                    case 'skills':
+                        loadSkills();
+                        break;
+                    case 'memories':
+                        loadMemories();
+                        break;
+                    case 'characters':
+                        // Add character loading function when implemented
+                        break;
+                }
+            }
+        });
+    });
+    
+    // Handle close button clicks
+    closeButtons.forEach(button => {
+        button.addEventListener('click', closeAllPanels);
+    });
+    
+    // Handle overlay clicks
+    overlay.addEventListener('click', closeAllPanels);
+    
+    // Handle escape key
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') {
+            closeAllPanels();
+        }
+    });
+});
+
+// Panel content loading functions
+async function loadTraits() {
+    const panel = document.querySelector('#traits-panel');
+    const loading = panel.querySelector('.loading-placeholder');
+    const traitsList = panel.querySelector('.traits-list');
+
+    try {
+        const response = await fetch('/game/traits', {
+            headers: {
+                'X-CSRFToken': CSRFToken.getToken()
+            }
+        });
+        
+        if (!response.ok) throw new Error('Failed to load traits');
+        
+        const data = await response.json();
+        
+        if (data.traits.length === 0) {
+            traitsList.innerHTML = '<div class="empty-state">No secondary traits developed yet.</div>';
+        } else {
+            traitsList.innerHTML = data.traits.map(trait => `
+                <div class="trait-item">
+                    <span class="trait-name">${trait.name}</span>
+                    <span class="trait-value ${trait.value > 0 ? 'positive' : 'negative'}">${trait.value > 0 ? '+' : ''}${trait.value}</span>
+                </div>
+            `).join('');
+        }
+        
+        loading.style.display = 'none';
+        traitsList.style.display = 'flex';
+        
+    } catch (error) {
+        console.error('Error loading traits:', error);
+        loading.textContent = 'Error loading traits. Please try again.';
+    }
+}
+
+async function loadSkills() {
+    const panel = document.querySelector('#skills-panel');
+    const loading = panel.querySelector('.loading-placeholder');
+    const skillsList = panel.querySelector('.skills-list');
+
+    try {
+        const response = await fetch('/game/skills', {
+            headers: {
+                'X-CSRFToken': CSRFToken.getToken()
+            }
+        });
+        
+        if (!response.ok) throw new Error('Failed to load skills');
+        
+        const data = await response.json();
+        
+        if (data.skills.length === 0) {
+            skillsList.innerHTML = '<div class="empty-state">No skills learned yet.</div>';
+        } else {
+            skillsList.innerHTML = data.skills.map(skill => `
+                <div class="skill-item">
+                    <span class="skill-name">${skill.name}</span>
+                    <span class="skill-value">${skill.value}</span>
+                </div>
+            `).join('');
+        }
+        
+        loading.style.display = 'none';
+        skillsList.style.display = 'flex';
+        
+    } catch (error) {
+        console.error('Error loading skills:', error);
+        loading.textContent = 'Error loading skills. Please try again.';
+    }
+}
+
+async function loadMemories() {
+    const panel = document.querySelector('#memories-panel');
+    const loading = panel.querySelector('.loading-placeholder');
+    const memoriesList = panel.querySelector('.memories-list');
+
+    try {
+        const response = await fetch('/game/memories', {
+            headers: {
+                'X-CSRFToken': CSRFToken.getToken()
+            }
+        });
+        
+        if (!response.ok) throw new Error('Failed to load memories');
+        
+        const data = await response.json();
+        
+        if (data.memories.length === 0) {
+            memoriesList.innerHTML = '<div class="empty-state">No memories yet.</div>';
+        } else {
+            memoriesList.innerHTML = data.memories.map(memory => `
+                <div class="memory-item" onclick="window.location.href='/game/memory/${memory.id}'">
+                    <div class="memory-header">
+                        <span class="memory-title">${memory.title}</span>
+                        <span class="memory-importance">Importance: ${memory.importance}</span>
+                    </div>
+                    <div class="memory-details">
+                        <div class="memory-tags">
+                            ${memory.emotional_tags.map(tag => 
+                                `<span class="memory-tag">${tag}</span>`
+                            ).join('')}
+                        </div>
+                        <span class="memory-age">Age ${memory.age_experienced}</span>
+                    </div>
+                </div>
+            `).join('');
+        }
+        
+        loading.style.display = 'none';
+        memoriesList.style.display = 'flex';
+        
+    } catch (error) {
+        console.error('Error loading memories:', error);
+        loading.textContent = 'Error loading memories. Please try again.';
+    }
+}

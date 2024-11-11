@@ -18,8 +18,8 @@ class Memory:
     life_id: ObjectId
     title: str
     description: str
-    importance: int  # 1-10
-    permanence: int  # 1-10
+    importance: int  # 1-3
+    permanence: int  # 1-3
     emotional_tags: List[str]
     context_tags: List[str]
     story_tags: List[str]  # e.g., "coming of age", "first love"

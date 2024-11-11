@@ -8,6 +8,11 @@
 {% block content %}
 <div class="memory-container">
     <div class="memory-header">
+        <a href="{{ url_for('game.game') }}" class="button primary">Back to Game</a>
+    </div>
+
+
+    <div class="memory-header">
         <h2>{{ memory.title }}</h2>
         <div class="memory-metadata">
             <span class="age">Age {{ memory.age_experienced }}</span>
@@ -131,14 +136,12 @@
             </div>
             {% endif %}
 
-            {% if memory.stress_impact != 0 %}
             <div class="impact-section">
                 <h4>Stress Impact</h4>
                 <div class="stress-change {% if memory.stress_impact > 0 %}stress-increase{% elif memory.stress_impact < 0 %}stress-decrease{% endif %}">
                     {{ '+' if memory.stress_impact > 0 }}{{ memory.stress_impact }}
                 </div>
             </div>
-            {% endif %}
         </div>
 
         {% if story %}
@@ -162,15 +165,11 @@
         <div class="memory-stats">
             <div class="stat">
                 <span class="stat-label">Importance</span>
-                <span class="stat-value">{{ memory.importance }}/10</span>
+                <span class="stat-value">{{ memory.importance }}/3</span>
             </div>
             <div class="stat">
                 <span class="stat-label">Permanence</span>
-                <span class="stat-value">{{ memory.permanence }}/10</span>
-            </div>
-            <div class="stat">
-                <span class="stat-label">Current Relevance</span>
-                <span class="stat-value">{{ memory.current_relevance }}/10</span>
+                <span class="stat-value">{{ memory.permanence }}/3</span>
             </div>
         </div>
         <a href="{{ url_for('game.game') }}" class="button primary">Back to Game</a>

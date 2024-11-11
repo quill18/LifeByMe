@@ -509,3 +509,108 @@ def view_memory(memory_id):
     except Exception as e:
         logger.error(f"Error viewing memory: {str(e)}\n{traceback.format_exc()}")
         #return redirect(url_for('game.game'))
+
+@game_bp.route('/game/traits', methods=['GET'])
+@login_required
+def get_traits():
+    """Get all secondary traits for current life"""
+    try:
+        user = get_current_user()
+        if not user:
+            return jsonify({'error': 'Not logged in'}), 401
+
+        db_session = Session.get_by_session_id(session['session_id'])
+        current_life = get_current_life(db_session)
+        if not current_life:
+            return jsonify({'error': 'No active life'}), 400
+
+        # Sort traits by absolute value to show strongest traits first
+        sorted_traits = sorted(
+            current_life.traits, 
+            key=lambda t: abs(t.value), 
+            reverse=True
+        )
+        
+        return jsonify({
+            'traits': [trait.to_dict() for trait in sorted_traits]
+        })
+
+    except Exception as e:
+        logger.error(f"Error getting traits: {str(e)}")
+        return jsonify({'error': str(e)}), 500
+
+@game_bp.route('/game/skills', methods=['GET'])
+@login_required
+def get_skills():
+    """Get all skills for current life"""
+    try:
+        user = get_current_user()
+        if not user:
+            return jsonify({'error': 'Not logged in'}), 401
+
+        db_session = Session.get_by_session_id(session['session_id'])
+        current_life = get_current_life(db_session)
+        if not current_life:
+            return jsonify({'error': 'No active life'}), 400
+
+        # Sort skills by value to show highest skills first
+        sorted_skills = sorted(
+            current_life.skills, 
+            key=lambda s: s.value, 
+            reverse=True
+        )
+        
+        return jsonify({
+            'skills': [skill.to_dict() for skill in sorted_skills]
+        })
+
+    except Exception as e:
+        logger.error(f"Error getting skills: {str(e)}")
+        return jsonify({'error': str(e)}), 500
+
+@game_bp.route('/game/memories', methods=['GET'])
+@login_required
+def get_memories():
+    """Get all memories for current life"""
+    try:
+        user = get_current_user()
+        if not user:
+            return jsonify({'error': 'Not logged in'}), 401
+
+        db_session = Session.get_by_session_id(session['session_id'])
+        current_life = get_current_life(db_session)
+        if not current_life:
+            return jsonify({'error': 'No active life'}), 400
+
+        memories = Memory.get_by_life_id(current_life._id)
+        # Sort memories by importance and then by creation date
+        sorted_memories = sorted(
+            memories,
+            key=lambda m: (-m.importance, -m.created_at.timestamp())
+        )
+        
+        # Create the memory list, making sure to handle the life_stage correctly
+        memory_list = []
+        for memory in sorted_memories:
+            try:
+                # If life_stage is already a string, use it directly
+                life_stage = memory.life_stage if isinstance(memory.life_stage, str) else memory.life_stage.value
+            except AttributeError:
+                # Fallback to a default if something goes wrong
+                life_stage = "Unknown"
+
+            memory_list.append({
+                'id': str(memory._id),
+                'title': memory.title,
+                'importance': memory.importance,
+                'age_experienced': memory.age_experienced,
+                'life_stage': life_stage,
+                'emotional_tags': memory.emotional_tags[:2],  # Just show first 2 tags
+                'created_at': memory.created_at.strftime('%Y-%m-%d')
+            })
+
+        return jsonify({'memories': memory_list})
+
+    except Exception as e:
+        logger.error(f"Error getting memories: {str(e)}")
+        return jsonify({'error': str(e)}), 500

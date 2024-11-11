@@ -76,7 +76,65 @@
     </div>
     
     <div class="right-column">
-        {# Placeholder for future content #}
+        <div class="character-actions">
+            <button class="action-button" data-panel="traits">
+                <span class="action-label">Secondary Traits</span>
+            </button>
+            <button class="action-button" data-panel="skills">
+                <span class="action-label">Skills</span>
+            </button>
+            <button class="action-button" data-panel="memories">
+                <span class="action-label">Memories</span>
+            </button>
+            <button class="action-button" data-panel="characters">
+                <span class="action-label">Characters</span>
+            </button>
+        </div>
     </div>
-</div>
+    </div>
+
+    <div class="slide-panel" id="traits-panel">
+        <div class="panel-header">
+            <h2>Secondary Traits</h2>
+            <button class="close-panel">&times;</button>
+        </div>
+        <div class="panel-content">
+            <div class="loading-placeholder">Loading traits...</div>
+            <div class="traits-list" style="display: none;"></div>
+        </div>
+    </div>
+    
+    <div class="slide-panel" id="skills-panel">
+        <div class="panel-header">
+            <h2>Skills</h2>
+            <button class="close-panel">&times;</button>
+        </div>
+        <div class="panel-content">
+            <div class="loading-placeholder">Loading skills...</div>
+            <div class="skills-list" style="display: none;"></div>
+        </div>
+    </div>
+    
+    <div class="slide-panel" id="memories-panel">
+        <div class="panel-header">
+            <h2>Memories</h2>
+            <button class="close-panel">&times;</button>
+        </div>
+        <div class="panel-content">
+            <div class="loading-placeholder">Loading memories...</div>
+            <div class="memories-list" style="display: none;"></div>
+        </div>
+    </div>
+    
+    <div class="slide-panel" id="characters-panel">
+        <div class="panel-header">
+            <h2>Characters</h2>
+            <button class="close-panel">&times;</button>
+        </div>
+        <div class="panel-content">
+            <div class="loading-placeholder">Loading characters...</div>
+            <div class="characters-list" style="display: none;"></div>
+        </div>
+    </div>
+        
 {% endblock %}
