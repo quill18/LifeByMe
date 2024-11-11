@@ -77,27 +77,15 @@ def change_password():
     
     if errors:
         return redirect(url_for('user.settings', errors=errors))
-        #return render_template('settings.html', 
-        #                     errors=errors, 
-        #                     user=user, 
-        #                     csrf_token=generate_csrf())
     
     try:
         user.change_password(new_password)
         logger.info(f"Password changed for user {user.username}")
         return redirect(url_for('user.settings', success_message='Password successfully changed'))
-        #return render_template('settings.html', 
-        #                     success_message='Password successfully changed', 
-        #                     user=user,
-        #                     csrf_token=generate_csrf())
     except Exception as e:
         logger.error(f"Error changing password: {str(e)}")
         errors.append('An error occurred while changing password')
         return redirect(url_for('user.settings', errors=errors))
-        #return render_template('settings.html', 
-        #                     errors=errors, 
-        #                     user=user,
-        #                     csrf_token=generate_csrf())
 
 @user_bp.route('/settings/api_key', methods=['POST'])
 @login_required
@@ -112,17 +100,9 @@ def update_api_key():
         user.update_openai_key(new_key)
         logger.info(f"API key updated for user {user.username}")
         return redirect(url_for('user.settings', success_message='API key successfully updated'))
-        #return render_template('settings.html', 
-        #                     success_message='API key successfully updated', 
-        #                     user=user,
-        #                     csrf_token=generate_csrf())
     except Exception as e:
         logger.error(f"Error updating API key: {str(e)}")
         return redirect(url_for('user.settings', errors=['An error occurred while updating API key']))
-        #return render_template('settings.html', 
-        #                     errors=['An error occurred while updating API key'], 
-        #                     user=user,
-        #                     csrf_token=generate_csrf())
     
 @user_bp.route('/settings/gpt_model', methods=['POST'])
 @login_required
