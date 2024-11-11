@@ -18,12 +18,14 @@ import re
 
 logger = logging.getLogger(__name__)
 
-gpt_model = "gpt-4o-mini"
+gpt_model = "gpt-4o"
 
 @dataclass
 class StoryResponse:
+    prompt: str
     story_text: str
     options: List[str]
+    character_ids: List[ObjectId]
 
 # Tool definition for OpenAI's function calling
 STORY_TOOLS = [{
@@ -50,7 +52,7 @@ STORY_TOOLS = [{
                     "items": {
                         "type": "string"
                     },
-                    "description": "List of character IDs for characters who appear in this story"
+                    "description": "List of character IDs for characters who appear in this story, chosen from the list of Available Characters"
                 }
             },
             "required": ["story_text", "options", "character_ids"]
@@ -100,19 +102,21 @@ def begin_story(life: Life) -> StoryResponse:
             result = json.loads(cleaned_args)
         
         # Create Story object
-        story = Story(
-            life_id=life._id,
-            prompt=prompt,
-            beats=[(clean_text_for_json(result["story_text"]), None)],
-            current_options=[clean_text_for_json(opt) for opt in result["options"]],
-            character_ids=[ObjectId(char_id) for char_id in result["character_ids"]]
-        )
-        story.save()
+        #story = Story(
+        #    life_id=life._id,
+        #    prompt=prompt,
+        #    beats=[(clean_text_for_json(result["story_text"]), None)],
+        #    current_options=[clean_text_for_json(opt) for opt in result["options"]],
+        #    character_ids=[ObjectId(char_id) for char_id in result["character_ids"]]
+        #)
+        #story.save()
         
         # Create and return StoryResponse
         return StoryResponse(
+            prompt=prompt,
             story_text=clean_text_for_json(result["story_text"]),
-            options=[clean_text_for_json(opt) for opt in result["options"]]
+            options=[clean_text_for_json(opt) for opt in result["options"]],
+            character_ids=[ObjectId(char_id) for char_id in result["character_ids"]]
         )
         
     except json.JSONDecodeError as e:
@@ -123,7 +127,6 @@ def begin_story(life: Life) -> StoryResponse:
         raise
     except Exception as e:
         logger.error(f"Error generating story: {str(e)}")
-        print(result)
         raise
 
 
@@ -204,8 +207,11 @@ Continue or conclude the story based on this choice."""}
         
         # Create and return StoryResponse - clean the text values
         return StoryResponse(
+            prompt=None,
             story_text=clean_text_for_json(result["story_text"]),
-            options=[clean_text_for_json(opt) for opt in result["options"]]        )
+            options=[clean_text_for_json(opt) for opt in result["options"]],
+            character_ids=None
+            )
         
     except json.JSONDecodeError as e:
         logger.error(f"JSON Decode error: {str(e)}")
@@ -271,8 +277,10 @@ Conclude the story based on this choice."""}
         
         # Create and return StoryResponse - clean the text values
         return StoryResponse(
+            prompt=None,
             story_text=clean_text_for_json(result["story_text"]),
-            options=None
+            options=None,
+            character_ids=None
         )
         
     except json.JSONDecodeError as e:
@@ -378,17 +386,18 @@ def build_story_begin_prompt(life: Life) -> str:
     base_prompt = build_base_prompt(life)
     
     # Get character information
-    characters_json = Character.format_characters_for_ai()
+    characters_json = Character.format_characters_for_ai(life_id=life._id)
 
     begin_specific = f"""
-Available Characters:
+
+Available Characters, in JSON format:
 {characters_json}
    
 Story Beginning Guidelines:
 - Start with a clear, immediate situation
 - Present something slightly unusual or interesting
 - Avoid starting with internal monologue
-- Consider which characters should be included. Make sure they are appropriate for the scene, setting, and time of day. Consider if you should include close friends or if the story should include less close or even antagonistic characters. It could even be time for a scene with no characters other than {life.name} by themselves. In the characters_ids field, always include one extra character not present in this opening scene but that might make an appearance later.
+- Choose zero, one, or two characters to include in this story from the list of Available Characters. Make sure they are appropriate for the scene, setting, and time of day. Consider if you should include close friends or if the story should include less close or even antagonistic characters. It could even be time for a scene with no characters other than {life.name} by themselves.
 
 Your response must use the provided function to return:
 - A clear story_text describing the initial situation. If {life.name} is highly stressed (> 70), the situation should reflect that and feel more challenging.
@@ -402,11 +411,11 @@ def build_story_continue_prompt(life: Life, story: Story) -> str:
     base_prompt = build_base_prompt(life)
 
     # Get character information for characters involved in this story
-    characters_json = Character.format_characters_for_ai(story.character_ids)
+    characters_json = Character.format_characters_for_ai(story.character_ids, life_id=life._id)
 
     
     continue_specific = f"""
-Characters in this story:
+Characters in this story, in JSON format:
 {characters_json}
 
 Story Continuation Guidelines:
@@ -427,10 +436,10 @@ def build_story_conclusion_prompt(life: Life, story: Story) -> str:
     """Build the prompt for concluding a story"""
     base_prompt = build_base_prompt(life)
 
-    characters_json = Character.format_characters_for_ai(story.character_ids)
+    characters_json = Character.format_characters_for_ai(story.character_ids, life_id=life._id)
     
     continue_specific = """
-Characters in this story:
+Characters in this story, in JSON format:
 {characters_json}
 
 Story Conclusion Guidelines:
@@ -522,10 +531,13 @@ MEMORY_TOOLS = [{
                     "items": {
                         "type": "object",
                         "properties": {
-                            "character_id": {"type": "string"},
+                            "id": {
+                                "type": "string",
+                                "description": "The ID of the character being updated"
+                            },
                             "physical_description": {
                                 "type": "string",
-                                "description": "Updated physical description of the character (optional). Many stories won't change the physical description of a character, but this is helpful if the character has aged or followed the player into a new life stage since the last interaction"
+                                "description": "Updated physical description of the character"
                             },
                             "personality_description": {
                                 "type": "string",
@@ -533,16 +545,15 @@ MEMORY_TOOLS = [{
                             },
                             "relationship_description": {
                                 "type": "string",
-                                "description": "Updated description of relationship to the player character"
+                                "description": "Updated description of relationship to the player character. Always begin the relationship description with a sentence specifying the base type of relationship, like 'Father', 'Mother', 'Sister', 'Brother', 'Friend', 'Boss', 'Teacher', 'Girlfriend', 'Husband', and so on - and then a sentence which describes the state of the relationship."
                             },
                             "relationship_status": {
                                 "type": "string",
                                 "enum": ["Active", "Departed", "Deceased"],
-                                "description": "Updated status of the relationship (optional)"
+                                "description": "Updated status of the relationship"
                             }
                         },
-                        "required": ["character_id", 
-                                   "personality_description", "relationship_description"]
+                        "required": ["id", "personality_description", "relationship_description"]
                     }
                 },
                 "stress_change": {
@@ -555,7 +566,7 @@ MEMORY_TOOLS = [{
             "required": [
                 "title", "description", "importance", "permanence", 
                 "emotional_tags", "context_tags", "story_tags",
-                "impact_explanation", "ocean_changes", "stress_change"
+                "impact_explanation", "ocean_changes", "stress_change",  "character_changes"
             ]
         }
     }
@@ -584,7 +595,7 @@ def generate_memory_from_story(life: Life, story: Story) -> Dict:
         ])
         
         # Build prompt
-        prompt = build_memory_generation_prompt(life)
+        prompt = build_memory_generation_prompt(life, story)
         
         # Make API call
         response = client.chat.completions.create(
@@ -619,7 +630,7 @@ Generate a memory based on this story."""}
         raise
 
 
-def build_memory_generation_prompt(life: Life) -> str:
+def build_memory_generation_prompt(life: Life, story: Story) -> str:
     """Build the prompt for memory generation from a story"""
     # Modify the character summary function first
     def build_character_summary(life: Life) -> str:
@@ -644,11 +655,18 @@ def build_memory_generation_prompt(life: Life) -> str:
         return "\n".join(filter(None, summary))
 
     character_summary = build_character_summary(life)
+
+    # Get character information for characters involved in this story
+    characters_json = Character.format_characters_for_ai(story.character_ids, life_id=life._id)
+
     
     return f"""You are analyzing a concluded story to determine its effects on the character and create a memory of what happened. Your task is to interpret the story's events and their impact on {life.name}.
 
 Character Information:
 {character_summary}
+
+Characters in this story, in JSON format - make sure to match the IDs to the correct character.
+{characters_json}
 
 Guidelines for Memory Generation:
 
@@ -677,9 +695,10 @@ Guidelines for Memory Generation:
    - Account for the difficulty and intensity settings
    - Consider current stress levels when determining impact
    - Think about long-term character development
+   - For any characters involved in the story, provide updated character descriptions that reflect how this interaction affected them
+   - IMPORTANT: When referring to characters in character_changes, use their exact ID from the Characters list above
 
 Process the story and create a memory that captures both what happened and how it affected {life.name}."""
-
 
 GENERATE_CAST_TOOLS = [{
     "type": "function",
@@ -699,7 +718,10 @@ GENERATE_CAST_TOOLS = [{
                             "gender": {"type": "string"},
                             "physical_description": {"type": "string"},
                             "personality_description": {"type": "string"},
-                            "relationship_description": {"type": "string"}
+                            "relationship_description": {
+                                "type": "string",
+                                "description": "The description of relationship to the player character. Always begin the relationship description with a sentence explaining the base type of relationship, like 'Father', 'Mother', 'Sister', 'Brother', 'Friend from School', 'Boss', 'Teacher', 'Girlfriend', 'Husband', and so on - and then a sentence which describes the state of the relationship."
+                            }
                         },
                         "required": ["name", "age", "gender", "physical_description", 
                                    "personality_description", "relationship_description"]
@@ -806,9 +828,10 @@ Character Guidelines:
 2. Teachers should represent different subjects and teaching styles.
 
 For relationship descriptions:
-- Parents/Siblings: Describe the existing family dynamic. {life.name} has {num_siblings} siblings.
-- Teachers: Specify that {life.name} has not yet met them, then describe how they will likely act upon first meeting {life.name}
-- Classmates: Specify that {life.name} has not yet met them, then describe how they will likely act upon first meeting {life.name}"""
+- Make sure to explicitly mention the base relationship. Example: "So-and-so is {life.name}'s mother." or "So-and-so is {life.name}'s classmate at Quillington High School."
+- Parents/Siblings: Describe the pre-existing family dynamic. Note that {life.name} has {num_siblings} siblings.
+- Teachers: Mention that this is {life.name}'s teacher, then specify that {life.name} has not yet met them, then describe how they will likely act upon first meeting {life.name}
+- Classmates: Mention that this is {life.name}'s classmate, then specify that {life.name} has not yet met them, then describe how they will likely act upon first meeting {life.name}"""
 
         print(prompt)
 

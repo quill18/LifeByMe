@@ -51,7 +51,8 @@ class Character:
             'relationship_description': self.relationship_description,
             'first_met_context': self.first_met_context,
             'first_met_life_stage': self.first_met_life_stage.value,
-            'last_interaction_life_stage': self.last_appearance_life_stage.value,
+            'last_appearance_life_stage': self.last_appearance_life_stage.value,
+            'relationship_status': self.relationship_status.value,  # Add this line
             'last_appearance_age': self.last_appearance_age,
             'memory_ids': [str(id) for id in self.memory_ids],
             'created_at': self.created_at,
@@ -72,13 +73,14 @@ class Character:
             relationship_description=data['relationship_description'],
             first_met_context=data['first_met_context'],
             first_met_life_stage=LifeStage(data['first_met_life_stage']),
-            last_interaction_life_stage=LifeStage(data['last_interaction_life_stage']),
-            relationship_status=RelationshipStatus(data.get('relationship_status', 'Active')),
+            last_appearance_life_stage=LifeStage(data['last_appearance_life_stage']),
+            relationship_status=RelationshipStatus(data.get('relationship_status', 'Active')),  # Fix this line
             last_appearance_age=data.get('last_appearance_age'),
             memory_ids=[ObjectId(id) for id in data.get('memory_ids', [])],
             created_at=data.get('created_at', datetime.utcnow()),
             last_interaction=data.get('last_interaction', datetime.utcnow())
         )
+
 
     def save(self) -> None:
         """Save character to database"""
@@ -115,29 +117,37 @@ class Character:
         self.save()
 
     @staticmethod
-    def format_characters_for_ai(character_ids: Optional[List[ObjectId]] = None) -> str:
+    def format_characters_for_ai(character_ids: Optional[List[ObjectId]] = None, life_id: Optional[ObjectId] = None) -> str:
         """Format character information as JSON for the AI.
-        If character_ids is None, return all active characters."""
+        If character_ids is None, return all active characters for the given life_id."""
         
+        if not life_id and not character_ids:
+            return "[]"  # Return empty array if no context provided
+            
         query = {}
+        if life_id:
+            query['life_id'] = life_id
         if character_ids is not None:
             query['_id'] = {'$in': character_ids}
-        if character_ids is None:
-            query['relationship_status'] = RelationshipStatus.ACTIVE.value
+        else:
+            query['relationship_status'] = 'Active'
         
+        print("DEBUG: Query:", query) 
         characters_data = []
         for char_data in characters.find(query):
+            print("DEBUG: Found character:", char_data)
             char = Character.from_dict(char_data)
             characters_data.append({
                 'id': str(char._id),
                 'name': char.name,
                 'age': char.age,
                 'last_appearance_age': char.last_appearance_age,
-                'last_interaction_life_stage': char.last_appearance_life_stage.value if char.last_appearance_life_stage else None,
+                'last_appearance_life_stage': char.last_appearance_life_stage.value if char.last_appearance_life_stage else None,
                 'gender': char.gender,
                 'physical_description': char.physical_description,
                 'personality_description': char.personality_description,
-                'relationship_description': char.relationship_description
+                'relationship_description': char.relationship_description,
+                'relationship_status': char.relationship_status.value
             })
         
         return json.dumps(characters_data, indent=2)

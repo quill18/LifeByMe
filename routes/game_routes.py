@@ -276,9 +276,10 @@ def new_story():
         # Create new story object
         story = Story(
             life_id=current_life._id,
-            prompt="Starting new story",  # We might want to store the actual prompt later
+            prompt=story_response.prompt,
             beats=[(story_response.story_text, None)],
-            current_options=story_response.options
+            current_options=story_response.options,
+            character_ids=story_response.character_ids
         )
         story.save()
 
@@ -404,13 +405,8 @@ def make_memory(story_id):
         # Generate memory parameters
         memory_data = generate_memory_from_story(current_life, story)
 
-        # Collect character IDs from character changes
-        character_ids = []
-        for char_change in memory_data.get('character_changes', []):
-            char_id = ObjectId(char_change['character_id'])
-            character = Character.get_by_id(char_id)
-            if character and character.life_id == current_life._id:
-                character_ids.append(char_id)
+        # Use character IDs from the story instead of character_changes
+        character_ids = story.character_ids
 
         # Create memory object
         memory = Memory(
@@ -435,7 +431,7 @@ def make_memory(story_id):
             age_experienced=current_life.age,
             impact_explanation=memory_data['impact_explanation'],
             stress_impact=memory_data['stress_change'],
-            character_ids=character_ids,
+            character_ids=character_ids,  # Use story's character list
             source_story_id=story._id
         )
         memory.save()
@@ -443,27 +439,41 @@ def make_memory(story_id):
         # Apply memory effects to life
         current_life.apply_memory(memory)
 
-        # Update characters if any changes
-        for char_change in memory_data.get('character_changes', []):
-            char_id = ObjectId(char_change['character_id'])
-            character = Character.get_by_id(char_id)
-            if character and character.life_id == current_life._id:
-                # Update character descriptions
-                character.physical_description = char_change['physical_description']
-                character.personality_description = char_change['personality_description']
-                character.relationship_description = char_change['relationship_description']
-                
-                # Update status if provided
-                if 'relationship_status' in char_change:
-                    character.update_status(RelationshipStatus(char_change['relationship_status']))
-                
-                # Update last appearance age and life stage
-                character.last_appearance_age = character.age
-                character.last_appearance_life_stage = current_life.life_stage
-                
-                # Add memory to character's memory list
-                character.add_memory(memory._id)
-                character.save()
+        # Update all characters involved in the story
+        for char_id in character_ids:
+            try:
+                character = Character.get_by_id(char_id)
+                if character and character.life_id == current_life._id:
+                    # Look for any specific changes for this character
+                    char_change = next(
+                        (c for c in memory_data.get('character_changes', []) 
+                         if ObjectId(c['id']) == char_id),
+                        None
+                    )
+
+                    if char_change:
+                        # Apply any specified changes
+                        if 'personality_description' in char_change:
+                            character.personality_description = char_change['personality_description']
+                        if 'relationship_description' in char_change:
+                            character.relationship_description = char_change['relationship_description']
+                        if 'physical_description' in char_change:
+                            character.physical_description = char_change['physical_description']
+                        if 'relationship_status' in char_change:
+                            character.update_status(RelationshipStatus(char_change['relationship_status']))
+
+                    # Update last appearance info for all characters involved
+                    character.last_appearance_age = current_life.age
+                    character.last_appearance_life_stage = current_life.life_stage
+                    
+                    # Add memory to all involved characters' memory lists
+                    character.add_memory(memory._id)
+                    character.save()
+
+            except Exception as e:
+                logger.error(f"Error updating character {char_id}: {str(e)}")
+                # Continue processing other characters even if one fails
+                continue
 
         # Mark story as completed
         story.complete_with_memory(memory._id)
@@ -477,6 +487,7 @@ def make_memory(story_id):
     except Exception as e:
         logger.error(f"Error creating memory: {str(e)}")
         return jsonify({'error': str(e)}), 500
+
 
 @game_bp.route('/game/memory/<memory_id>')
 @login_required
