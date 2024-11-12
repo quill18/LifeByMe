@@ -106,7 +106,7 @@ class Memory:
     @staticmethod
     def get_by_life_id(life_id: ObjectId) -> List['Memory']:
         """Get all memories for a specific life"""
-        memory_data = memories.find({'life_id': life_id})
+        memory_data = memories.find({'life_id': life_id}).sort('created_at', 1)  # 1 for ascending order (oldest first)
         return [Memory.from_dict(data) for data in memory_data]
 
     def add_character(self, character_id: ObjectId) -> None:
