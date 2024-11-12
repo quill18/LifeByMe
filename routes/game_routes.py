@@ -14,7 +14,7 @@ from bson import ObjectId
 from models.game.enums import LifeStage, Intensity, Difficulty
 import bleach
 from typing import Tuple, List
-from models.game.base import Ocean, Trait, Skill
+from models.game.base import Ocean, Trait
 from models.game.story_ai import begin_story, continue_story, conclude_story, generate_memory_from_story, generate_initial_cast
 from models.game.memory import Memory
 from models.game.character import Character, RelationshipStatus
@@ -221,7 +221,6 @@ def new_life():
             current_employment=None,
             ocean=Ocean(),
             traits=[],
-            skills=[],
             current_stress=0
         )
         
@@ -425,10 +424,6 @@ def make_memory(story_id):
                 Trait(t['name'], t['value']) 
                 for t in memory_data.get('trait_changes', [])
             ],
-            skill_impacts=[
-                Skill(s['name'], s['value']) 
-                for s in memory_data.get('skill_changes', [])
-            ],
             life_stage=current_life.life_stage,
             age_experienced=current_life.age,
             impact_explanation=memory_data['impact_explanation'],
@@ -572,34 +567,6 @@ def get_traits():
         logger.error(f"Error getting traits: {str(e)}")
         return jsonify({'error': str(e)}), 500
 
-@game_bp.route('/game/skills', methods=['GET'])
-@login_required
-def get_skills():
-    """Get all skills for current life"""
-    try:
-        user = get_current_user()
-        if not user:
-            return jsonify({'error': 'Not logged in'}), 401
-
-        db_session = Session.get_by_session_id(session['session_id'])
-        current_life = get_current_life(db_session)
-        if not current_life:
-            return jsonify({'error': 'No active life'}), 400
-
-        # Sort skills by value to show highest skills first
-        sorted_skills = sorted(
-            current_life.skills, 
-            key=lambda s: s.value, 
-            reverse=True
-        )
-        
-        return jsonify({
-            'skills': [skill.to_dict() for skill in sorted_skills]
-        })
-
-    except Exception as e:
-        logger.error(f"Error getting skills: {str(e)}")
-        return jsonify({'error': str(e)}), 500
 
 @game_bp.route('/game/memories', methods=['GET'])
 @login_required

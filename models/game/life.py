@@ -7,8 +7,10 @@ from dataclasses import dataclass, field
 from pymongo import MongoClient
 from config import Config
 from .enums import LifeStage, Intensity, Difficulty
-from .base import Ocean, Trait, Skill
+from .base import Ocean, Trait
 from .memory import Memory
+from models.utils import DatabaseError
+
 
 client = MongoClient(Config.MONGO_URI)
 db = client[Config.DB_NAME]
@@ -28,7 +30,6 @@ class Life:
     current_employment: Optional[str]
     ocean: Ocean
     traits: List[Trait]
-    skills: List[Skill]
     current_stress: int = 0  # 0-100
     created_at: datetime = field(default_factory=datetime.utcnow)
     last_played: datetime = field(default_factory=datetime.utcnow)
@@ -36,7 +37,6 @@ class Life:
     _id: ObjectId = field(default_factory=ObjectId)
 
     def to_dict(self) -> Dict:
-        """Convert Life to dictionary for database storage"""
         return {
             '_id': self._id,
             'user_id': self.user_id,
@@ -51,7 +51,6 @@ class Life:
             'current_employment': self.current_employment,
             'ocean': self.ocean.to_dict(),
             'traits': [trait.to_dict() for trait in self.traits],
-            'skills': [skill.to_dict() for skill in self.skills],
             'current_stress': self.current_stress,
             'created_at': self.created_at,
             'last_played': self.last_played,
@@ -60,7 +59,6 @@ class Life:
 
     @classmethod
     def from_dict(cls, data: Dict) -> 'Life':
-        """Create Life object from dictionary"""
         return cls(
             _id=data.get('_id', ObjectId()),
             user_id=data['user_id'],
@@ -75,13 +73,11 @@ class Life:
             current_employment=data.get('current_employment'),
             ocean=Ocean.from_dict(data['ocean']),
             traits=[Trait.from_dict(t) for t in data['traits']],
-            skills=[Skill.from_dict(s) for s in data['skills']],
             current_stress=data.get('current_stress', 0),
             created_at=data.get('created_at', datetime.utcnow()),
             last_played=data.get('last_played', datetime.utcnow()),
             archived=data.get('archived', False)
         )
-        
 
 
 
@@ -125,17 +121,6 @@ class Life:
                 existing_trait.value = (existing_trait + impact).value
             else:
                 self.traits.append(Trait(impact.name, impact.value))
-
-        # Update or add skills
-        for impact in memory.skill_impacts:
-            existing_skill = next(
-                (s for s in self.skills if s.name == impact.name),
-                None
-            )
-            if existing_skill:
-                existing_skill.value = (existing_skill + impact).value
-            else:
-                self.skills.append(Skill(impact.name, impact.value))
 
         # Update stress
         self.current_stress = max(0, min(100, self.current_stress + memory.stress_impact))

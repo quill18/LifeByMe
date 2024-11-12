@@ -102,22 +102,6 @@
             </div>
             {% endif %}
 
-            {% if memory.skill_impacts %}
-            <div class="impact-section">
-                <h4>Skills</h4>
-                <div class="skill-changes">
-                    {% for skill in memory.skill_impacts %}
-                    <div class="skill-change">
-                        <span class="skill-name">{{ skill.name }}</span>
-                        <span class="skill-value {% if skill.value > 0 %}positive{% elif skill.value < 0 %}negative{% endif %}">
-                            {{ '+' if skill.value > 0 }}{{ skill.value }}
-                        </span>
-                    </div>
-                    {% endfor %}
-                </div>
-            </div>
-            {% endif %}
-
             {% if characters %}
             <div class="impact-section">
                 <h4>People Involved</h4>

@@ -1096,13 +1096,13 @@ input[type="password"] {
     color: var(--secondary-color);
 }
 
-.trait-changes, .skill-changes {
+.trait-changes {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
     gap: 0.5rem;
 }
 
-.trait-change, .skill-change {
+.trait-change {
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -1223,7 +1223,7 @@ input[type="password"] {
         padding: 1rem;
     }
 
-    .trait-changes, .skill-changes {
+    .trait-changes {
         grid-template-columns: 1fr;
     }
 
@@ -1368,13 +1368,13 @@ input[type="password"] {
 }
 
 /* Panel Content Styling */
-.traits-list, .skills-list {
+.traits-list {
     display: flex;
     flex-direction: column;
     gap: 0.5rem;
 }
 
-.trait-item, .skill-item {
+.trait-item {
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -1383,11 +1383,11 @@ input[type="password"] {
     border-radius: 4px;
 }
 
-.trait-name, .skill-name {
+.trait-name {
     font-weight: 500;
 }
 
-.trait-value, .skill-value {
+.trait-value {
     font-family: monospace;
     padding: 0.25rem 0.5rem;
     border-radius: 3px;
@@ -1403,11 +1403,6 @@ input[type="password"] {
 .trait-value.negative {
     background-color: #ffebee;
     color: var(--danger-color);
-}
-
-.skill-value {
-    background-color: var(--light-gray);
-    border: 1px solid var(--border-color);
 }
 
 /* Memory List Styling */

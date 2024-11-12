@@ -1,5 +1,4 @@
 # ./models/game/base.py
-
 from dataclasses import dataclass
 from typing import Dict
 
@@ -45,7 +44,6 @@ class Ocean:
     def has_changes(self) -> bool:
         """Check if any OCEAN values are non-zero"""
         return any(value != 0 for value in self.to_dict().values())
-    
 
 @dataclass
 class Trait:
@@ -75,34 +73,3 @@ class Trait:
             name=data['name'],
             value=data.get('value', 0)
         )
-
-@dataclass
-class Skill:
-    name: str
-    value: int = 0
-
-    def __add__(self, other: 'Skill') -> 'Skill':
-        """Add two Skills together, clamping value to [0, 10]"""
-        if self.name != other.name:
-            raise ValueError(f"Cannot add skills with different names: {self.name} and {other.name}")
-        return Skill(
-            name=self.name,
-            value=max(0, min(10, self.value + other.value))
-        )
-
-    def to_dict(self) -> Dict[str, any]:
-        """Convert to dictionary for database storage"""
-        return {
-            'name': self.name,
-            'value': self.value
-        }
-
-    @classmethod
-    def from_dict(cls, data: Dict[str, any]) -> 'Skill':
-        """Create Skill object from dictionary"""
-        return cls(
-            name=data['name'],
-            value=data.get('value', 0)
-        )
-    
-    

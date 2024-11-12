@@ -242,9 +242,6 @@ document.addEventListener('DOMContentLoaded', () => {
                     case 'traits':
                         loadTraits();
                         break;
-                    case 'skills':
-                        loadSkills();
-                        break;
                     case 'memories':
                         loadMemories();
                         break;
@@ -306,42 +303,6 @@ async function loadTraits() {
     } catch (error) {
         console.error('Error loading traits:', error);
         loading.textContent = 'Error loading traits. Please try again.';
-    }
-}
-
-async function loadSkills() {
-    const panel = document.querySelector('#skills-panel');
-    const loading = panel.querySelector('.loading-placeholder');
-    const skillsList = panel.querySelector('.skills-list');
-
-    try {
-        const response = await fetch('/game/skills', {
-            headers: {
-                'X-CSRFToken': CSRFToken.getToken()
-            }
-        });
-        
-        if (!response.ok) throw new Error('Failed to load skills');
-        
-        const data = await response.json();
-        
-        if (data.skills.length === 0) {
-            skillsList.innerHTML = '<div class="empty-state">No skills learned yet.</div>';
-        } else {
-            skillsList.innerHTML = data.skills.map(skill => `
-                <div class="skill-item">
-                    <span class="skill-name">${skill.name}</span>
-                    <span class="skill-value">${skill.value}</span>
-                </div>
-            `).join('');
-        }
-        
-        loading.style.display = 'none';
-        skillsList.style.display = 'flex';
-        
-    } catch (error) {
-        console.error('Error loading skills:', error);
-        loading.textContent = 'Error loading skills. Please try again.';
     }
 }
 

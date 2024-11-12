@@ -7,7 +7,7 @@ from dataclasses import dataclass, field
 from pymongo import MongoClient
 from models.game.life import LifeStage
 from config import Config
-from .base import Ocean, Trait, Skill
+from .base import Ocean, Trait
 import json
 
 client = MongoClient(Config.MONGO_URI)
@@ -29,11 +29,10 @@ class Memory:
     story_tags: List[str]  # e.g., "coming of age", "first love"
     ocean_impact: Ocean
     trait_impacts: List[Trait]
-    skill_impacts: List[Skill]
     life_stage: LifeStage
     age_experienced: int
-    impact_explanation: str  # New field for AI's justification
-    stress_impact: int      # Positive or negative impact on stress
+    impact_explanation: str
+    stress_impact: int
     character_ids: List[ObjectId] = field(default_factory=list)
     source_story_id: Optional[ObjectId] = None
     created_at: datetime = field(default_factory=datetime.utcnow)
@@ -54,7 +53,6 @@ class Memory:
             'story_tags': self.story_tags,
             'ocean_impact': self.ocean_impact.to_dict(),
             'trait_impacts': [trait.to_dict() for trait in self.trait_impacts],
-            'skill_impacts': [skill.to_dict() for skill in self.skill_impacts],
             'life_stage': self.life_stage.value,
             'age_experienced': self.age_experienced,
             'impact_explanation': self.impact_explanation,
@@ -80,7 +78,6 @@ class Memory:
             story_tags=data['story_tags'],
             ocean_impact=Ocean.from_dict(data['ocean_impact']),
             trait_impacts=[Trait.from_dict(t) for t in data['trait_impacts']],
-            skill_impacts=[Skill.from_dict(s) for s in data['skill_impacts']],
             life_stage=data['life_stage'],
             age_experienced=data['age_experienced'],
             impact_explanation=data['impact_explanation'],

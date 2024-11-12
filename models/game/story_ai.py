@@ -378,7 +378,7 @@ Story Guidelines:
 4. Create opportunities for:
    - {life.name}'s character growth
    - Relationship development
-   - Secondary skill development
+   - Secondary trait development (secondary traits represent: more specific personality traits like 'integrity' or 'artisticness', skills like 'cooking skill' or 'video game skills', and interests/preferences like 'coffee lover')
    - Memory formation
 
 5. Limit the story text length of each beat to a single short paragraph. Make sure the story_text doesn't include the options
@@ -508,7 +508,7 @@ MEMORY_TOOLS = [{
                 },
                 "impact_explanation": {
                     "type": "string",
-                    "description": "Brief explanation of why the memory affects traits, skills, and stress levels the way it does - and why you choose the Importance and Permanence you did"
+                    "description": "Brief explanation of why the memory affects primary traits, secondary traits, relationships, and stress levels the way it does - and why you choose the Importance and Permanence you did"
                 },
                 "ocean_changes": {
                     "type": "object",
