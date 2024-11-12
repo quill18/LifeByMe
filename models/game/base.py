@@ -1,6 +1,7 @@
 # ./models/game/base.py
 from dataclasses import dataclass
 from typing import Dict
+import random
 
 @dataclass
 class Ocean:
@@ -9,6 +10,17 @@ class Ocean:
     extraversion: int = 0
     agreeableness: int = 0
     neuroticism: int = 0
+
+    @classmethod
+    def random(cls) -> 'Ocean':
+        """Create a new Ocean object with random values between -10 and 10"""
+        return cls(
+            openness=random.randint(-10, 10),
+            conscientiousness=random.randint(-10, 10),
+            extraversion=random.randint(-10, 10),
+            agreeableness=random.randint(-10, 10),
+            neuroticism=random.randint(-10, 10)
+        )
 
     def __add__(self, other: 'Ocean') -> 'Ocean':
         """Add two Ocean objects together, clamping values to [-10, 10]"""
