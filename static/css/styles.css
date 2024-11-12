@@ -29,6 +29,14 @@ body {
     background-color: var(--light-gray);
 }
 
+a {
+    color: var(--primary-color);
+    text-decoration: none;
+ }
+ a:hover {
+    text-decoration: underline;
+ }
+  
 /* Container */
 .container {
     max-width: 1200px;
@@ -761,23 +769,22 @@ input[type="password"] {
 }
 
 /* Story Beat */
-.story-beat {
-    margin-bottom: 1.5rem;
-    padding-bottom: 1.5rem;
-    border-bottom: 1px solid var(--border-color);
-}
-
 .story-beat:last-child {
     border-bottom: none;
 }
 
-/* Story Text */
-.story-text {
-    font-size: 1.1em;
-    line-height: 1.6;
-    margin-bottom: 1rem;
-    white-space: pre-line; /* Preserve line breaks from AI response */
+.story-beats {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
 }
+
+.story-beat {
+    padding: 1rem;
+    background-color: var(--light-gray);
+    border-radius: 4px;
+}
+
 
 /* Selected Response */
 .selected-response {
@@ -923,7 +930,8 @@ input[type="password"] {
 .story-text {
     font-size: 1.1em;
     line-height: 1.6;
-    margin-bottom: 2rem;
+    margin-top: 0;
+    margin-bottom: 0;
     white-space: pre-line; /* Preserve line breaks from AI response */
 }
 
@@ -1165,18 +1173,6 @@ input[type="password"] {
     margin-top: 2rem;
     padding-top: 2rem;
     border-top: 1px solid var(--border-color);
-}
-
-.story-beats {
-    display: flex;
-    flex-direction: column;
-    gap: 1rem;
-}
-
-.story-beat {
-    padding: 1rem;
-    background-color: var(--light-gray);
-    border-radius: 4px;
 }
 
 .beat-response {
