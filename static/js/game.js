@@ -2,6 +2,12 @@
 
 document.addEventListener('DOMContentLoaded', () => {
     const centerColumn = document.querySelector('.center-column');
+
+    // Scroll the story area to the bottom
+    const storyScroll = document.querySelector('.story-scroll');
+    if (storyScroll) {
+        storyScroll.scrollTop = storyScroll.scrollHeight;
+    }
     
     // Handle all button clicks in the game area
     document.addEventListener('click', async (e) => {
@@ -328,7 +334,7 @@ async function loadMemories() {
             memoriesList.innerHTML = data.memories.map(memory => `
                 <div class="memory-item" onclick="window.location.href='/game/memory/${memory.id}'">
                     <div class="memory-header">
-                        <span class="memory-title">${memory.title}</span>
+                        <span class="memory-title"><a href="/game/memory/${memory.id}">${memory.title}</a></span>
                         <span class="memory-importance">Importance: ${memory.importance}</span>
                     </div>
                     <div class="memory-details">
@@ -377,7 +383,7 @@ async function loadCharacters() {
             charactersList.innerHTML = data.characters.map(character => `
                 <div class="character-item" onclick="window.location.href='/game/character/${character.id}'">
                     <div class="character-item-info">
-                        <div class="character-item-name">${character.name}</div>
+                        <div class="character-item-name"><a href="/game/character/${character.id}">${character.name}</a></div>
                         <div class="character-item-details">
                             <span class="character-item-age">Age ${character.age}</span> • 
                             <span class="character-item-relationship">${character.relationship_type}</span>
