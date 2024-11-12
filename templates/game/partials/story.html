@@ -3,9 +3,7 @@
     <div class="story-scroll">
         {% for beat, response in story.beats[:-1] %}
         <div class="story-beat">
-            <div class="story-text">
-                {{ beat | safe }}
-            </div>
+            <div class="story-text">{{ beat | safe }}</div>
             {% if response %}
             <div class="selected-response">
                 {{ response }}
@@ -16,9 +14,7 @@
         
         <!-- Current beat -->
         <div class="story-beat current">
-            <div class="story-text">
-                {{ story.beats[-1][0] | safe }}
-            </div>
+            <div class="story-text">{{ story.beats[-1][0] | safe }}</div>
         </div>
     </div>
     
