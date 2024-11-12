@@ -18,6 +18,7 @@ from models.game.base import Ocean, Trait
 from models.game.story_ai import begin_story, continue_story, conclude_story, generate_memory_from_story, generate_initial_cast
 from models.game.memory import Memory
 from models.game.character import Character, RelationshipStatus
+import traceback
 
 game_bp = Blueprint('game', __name__)
 logger = logging.getLogger(__name__)
@@ -218,7 +219,7 @@ def new_life():
             difficulty=Difficulty[form_data['difficulty']],
             custom_directions=bleach.clean(form_data['custom_directions']),
             current_employment=None,
-            ocean=Ocean(),
+            ocean=Ocean.random(),
             traits=[],
             current_stress=0
         )
@@ -416,7 +417,12 @@ def make_memory(story_id):
         # Use character IDs from the story instead of character_changes
         #character_ids = story.character_ids
         # Actually, let's try it with a new field instead:
-        character_ids = memory_data['character_ids_of_featured_characters']
+        #if memory_data['character_ids_of_featured_characters']:
+        #    character_ids = memory_data['character_ids_of_featured_characters']
+        # Safely get character IDs       
+        #character_ids = memory_data.get('character_ids_of_featured_characters', [])
+        
+        character_ids = [ObjectId(change['id']) for change in memory_data.get('character_changes', [])]
 
         # Create memory object
         memory = Memory(
@@ -491,7 +497,7 @@ def make_memory(story_id):
         })
 
     except Exception as e:
-        logger.error(f"Error creating memory: {str(e)}")
+        logger.error(f"Error creating memory: {str(e)}\n{traceback.format_exc()}")
         return jsonify({'error': str(e)}), 500
 
 
@@ -562,11 +568,16 @@ def get_traits():
             return jsonify({'error': 'No active life'}), 400
 
         # Sort traits by absolute value to show strongest traits first
+        #sorted_traits = sorted(
+            #current_life.traits, 
+            #key=lambda t: abs(t.value), 
+            #reverse=True
+        #)
+        # Sort traits alphabetically by name
         sorted_traits = sorted(
             current_life.traits, 
-            key=lambda t: abs(t.value), 
-            reverse=True
-        )
+            key=lambda t: t.name
+        )        
         
         return jsonify({
             'traits': [trait.to_dict() for trait in sorted_traits]
@@ -593,14 +604,14 @@ def get_memories():
 
         memories = Memory.get_by_life_id(current_life._id)
         # Sort memories by importance and then by creation date
-        sorted_memories = sorted(
-            memories,
-            key=lambda m: (-m.importance, -m.created_at.timestamp())
-        )
+        #sorted_memories = sorted(
+        #    memories,
+        #    key=lambda m: (-m.importance, -m.created_at.timestamp())
+        #)
         
         # Create the memory list, making sure to handle the life_stage correctly
         memory_list = []
-        for memory in sorted_memories:
+        for memory in memories:
             try:
                 # If life_stage is already a string, use it directly
                 life_stage = memory.life_stage if isinstance(memory.life_stage, str) else memory.life_stage.value
