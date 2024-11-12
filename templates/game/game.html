@@ -74,7 +74,30 @@
         {% else %}
             <div class="no-story">
                 <p>Ready to continue your journey?</p>
-                <button class="button primary">Start New Story</button>
+                <button class="button primary start-story-button">Start New Story</button>
+                <div class="customize-story">
+                    <a href="#" class="customize-toggle">⚙ Customize</a>
+                    <div class="customize-form" style="display: none;">
+                        <div class="form-group">
+                            <label for="focusCharacter">Focus Character:</label>
+                            <select id="focusCharacter" name="focusCharacter">
+                                <option value="">Any Character</option>
+                                {% for char in active_characters %}
+                                <option value="{{ char._id }}">{{ char.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="storyTheme">Story Theme:</label>
+                            <select id="storyTheme" name="storyTheme">
+                                <option value="">Any Theme</option>
+                                <option value="Friendship">Friendship</option>
+                                <option value="Romance">Romance</option>
+                                <option value="Antagonism">Antagonism</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
             </div>
         {% endif %}
     </div>

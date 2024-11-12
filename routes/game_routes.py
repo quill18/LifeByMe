@@ -56,10 +56,17 @@ def game():
     
     current_story = Story.get_by_life_id(current_life._id)
     
+    # Get active characters
+    characters = Character.get_by_life_id(current_life._id)
+    active_characters = [c for c in characters if c.relationship_status == RelationshipStatus.ACTIVE]
+    active_characters.sort(key=lambda x: x.name.lower())  # Case-insensitive sort
+
+
     return render_template('game/game.html',
                          user=user,
                          life=current_life,
                          story=current_story,
+                         active_characters=active_characters,
                          StoryStatus=StoryStatus,  # Add this line
                          csrf_token=generate_csrf())
 
@@ -269,17 +276,37 @@ def new_story():
         if existing_story and not existing_story.completed:
             return jsonify({'error': 'There is already an active story'}), 400
 
-        # Check if this is the first story ever for this life
+        # Get customization options from request
+        data = request.get_json() or {}
+        focus_character_id = data.get('focus_character')
+        story_theme = data.get('story_theme')
+
+        # Build custom story seed based on options
+        custom_story_seed = []
+        
+        # Handle first story differently
         story_count = stories.count_documents({'life_id': current_life._id})
-        is_first_story = story_count == 0
+        if story_count == 0:
+            custom_story_seed.append(
+                f"This is {current_life.name}'s first day at Quillington High School. "
+                "They have just moved to town over the summer. "
+                "This story should focus on the nerves and excitement that accompany such an event."
+            )
+        
+        # Add character focus if specified
+        if focus_character_id:
+            character = Character.get_by_id(ObjectId(focus_character_id))
+            if character:
+                custom_story_seed.append(f"Make sure this story focuses on {character.name}.")
 
-        # Set custom seed for first story
-        custom_story_seed = ""
-        if is_first_story:
-            custom_story_seed = f"This is {current_life.name}'s first day at Quillington High School. They have just moved to town over the summer. This story should focus on the nerves and excitement that accompany such an event."
+        # Add theme focus if specified
+        if story_theme:
+            custom_story_seed.append(f"Make sure this story focuses on a theme of {story_theme}.")
 
-        # Get story beginning
-        story_response = begin_story(current_life, custom_story_seed)
+        print(f"custom_story_seed: {custom_story_seed}")
+
+        # Get story beginning with custom seed
+        story_response = begin_story(current_life, " ".join(custom_story_seed))
 
         # Create new story object
         story = Story(
@@ -421,7 +448,7 @@ def make_memory(story_id):
         #    character_ids = memory_data['character_ids_of_featured_characters']
         # Safely get character IDs       
         #character_ids = memory_data.get('character_ids_of_featured_characters', [])
-        
+
         character_ids = [ObjectId(change['id']) for change in memory_data.get('character_changes', [])]
 
         # Create memory object
@@ -652,6 +679,7 @@ def get_characters():
         # Get active characters
         characters = Character.get_by_life_id(current_life._id)
         active_characters = [c for c in characters if c.relationship_status == RelationshipStatus.ACTIVE]
+        active_characters.sort(key=lambda x: x.name.lower())  # Case-insensitive sort
         
         # Format character data
         character_list = [{

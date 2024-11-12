@@ -1647,3 +1647,43 @@ button:disabled {
 .character-item-relationship {
     font-style: italic;
 }
+
+.customize-story {
+    margin-top: 1rem;
+    text-align: center;
+}
+
+.customize-toggle {
+    font-size: 0.9em;
+    color: var(--secondary-color);
+    text-decoration: none;
+    cursor: pointer;
+}
+
+.customize-toggle:hover {
+    color: var(--primary-color);
+    text-decoration: none;
+}
+
+.customize-form {
+    margin-top: 1rem;
+    padding: 1rem;
+    background-color: var(--light-gray);
+    border-radius: 4px;
+}
+
+.customize-form .form-group {
+    margin-bottom: 0.5rem;
+}
+
+.customize-form .form-group:last-child {
+    margin-bottom: 0;
+}
+
+.customize-form select {
+    width: 100%;
+    padding: 0.5rem;
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    background-color: white;
+}
