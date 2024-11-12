@@ -183,7 +183,7 @@ Story context:
 
 Player chose: {clean_text_for_json(selected_option)}
 
-Continue or conclude the story based on this choice."""}
+Continue the story based on this choice."""}
             ],
             tools=STORY_TOOLS,
             tool_choice={"type": "function", "function": {"name": "create_story_beat"}}
@@ -347,7 +347,7 @@ def build_base_prompt(life: Life) -> str:
     intensity_guidelines = build_intensity_guidelines(life.intensity, life.difficulty)
     memories_json = Memory.format_memories_for_ai(life._id)
     
-    return f"""You are a life simulation game's story generation system. Your role is to create engaging, contextually appropriate story beats that feel natural and personal to the character. Use direct, active, language - preferring a simple and straightforward writing style rather than flowerly or prosaic text.
+    return f"""You are a life simulation game's story generation system. Your role is to create engaging, contextually appropriate story beats that feel natural and personal to the character. Use direct, active, language - preferring a simple and straightforward writing style rather than flowerly or prosaic text. Write in present tense.
 
 Character Information:
 {character_summary}
@@ -357,30 +357,27 @@ Intensity & Difficulty Guidelines: {intensity_guidelines}
 Character's Memory History, in chronological order:
 {memories_json}
 
-Use these memories to help craft linking stories, but also to avoid duplicating scenarios that the player has already experienced. Make sure the player is experiencing a variety of different events, while also sometimes revisiting previous plot points - especially if they are important, life-affecting moments.
+Make sure the player is experiencing a variety of different events, while also sometimes revisiting previous plot points - especially if they are important, life-affecting moments.
 
 Story Guidelines:
 1. Incorporate {life.name}'s personality traits naturally:
    - Traits range from +10 to -10
    - Traits closer to the extreme values of +10 or -10 should have a greater impact on story beat generation and the options available to the player.
-   - Traits are not necessarily inheritently good or bad. Events that would encourage behaviour inline with or opposed to the character's trait values are neither good nor bad.
    - Actions that align with a character's traits represent the character's natural, instinctive response to events, but could represent complacency. Actions counter to a character's traits could be a tremendous source of stress, but could represent an opportunity to grow or change.
 
 2. Consider stress levels:
    - Current stress affects emotional reactions
-   - High stress (>70) makes challenges harder. When highly stress, consider offering options that represent a "mental breakdown" inline with a character's traits that might provide a large stress relief even at the cost of a negative outcome to the story. (e.g. a high school student deciding to blow off studying for an exame to play video games instead)
-   - Low stress (<30) allows for more ambitious responses, including opportunities to push the characters limits (even counter to traits) for greater success but higher stress generation. At low stress, generate story beats that are likely to increase stress even, or especially, during times of personal growth.
+   - High stress (>70) makes challenges more dramatic. When highly stress, consider offering options that represent a "mental breakdown" inline with a character's traits that might provide a large stress relief even at the cost of a negative outcome to the story. (e.g. a high school student deciding to blow off studying for an exame to play video games instead)
 
 3. Story elements should:
    - Feel natural and age-appropriate
-   - Be creative and varied. Avoid duplicating events similar to those already in Memories
    - Consider the character's life stage and circumstances
+   - Occasionally provide options for romance, making sure they are age-appropriate (also consider the Intensity level.)
 
 4. Create opportunities for:
    - {life.name}'s character growth
    - Relationship development
    - Secondary trait development (secondary traits represent: more specific personality traits like 'integrity' or 'artisticness', skills like 'cooking skill' or 'video game skills', and interests/preferences like 'coffee lover')
-   - Memory formation
 
 5. Limit the story text length of each beat to a single short paragraph. Make sure the story_text doesn't include the options
 
@@ -407,13 +404,13 @@ Available Characters, in JSON format:
    
 Story Beginning Guidelines:
 - Start with a clear, immediate situation
-- Present something slightly unusual or interesting
-- Avoid starting with internal monologue
 - Choose zero, one, or two characters to include in this story from the list of Available Characters. Make sure they are appropriate for the scene, setting, and time of day. Consider if you should include close friends or if the story should include less close or even antagonistic characters. It could even be time for a scene with no characters other than {life.name} by themselves.
+- It's okay for some characters to have bad reactions to the player and for the player to fail in some ways. That is more realistic and makes for a more interesting game. Consider Difficulty, Intensity, current Stress, AND RECENT MEMORIES to help determine how positive or negative the event should be, aiming for variety
+- Vary between locations (School or Work vs Home, maybe even a friend's home, restaurant, mall, and other locations appropriate for the player's life stage - or relevant to the users personality and interests)
 
 Your response must use the provided function to return:
 - A clear story_text describing the initial situation. If {life.name} is highly stressed (> 70), the situation should reflect that and feel more challenging.
-- Separate from the story_text, also return 4 distinct response options that {life.name} could take. Make options feel meaningfully different and could lead the story in different directions. Options that align with {life.name}'s traits may feel comfortable and reduce stress. Options that conflict with {life.name}'s traits may provide opportunites for change, but could cause stress. Include at least one option that correlates to {life.name}'s personality and at least one option that conflicts with {life.name}'s personality.
+- Separate from the story_text, also return 4 distinct response options that {life.name} could take. Make options feel meaningfully different and could lead the story in different directions. Include at least one option that correlates to {life.name}'s personality and at least one option that conflicts with {life.name}'s personality.
 - DO NOT mentioning the options in the main story_text as it would be redundant{custom_story_seed}"""
 
     return base_prompt + begin_specific
@@ -433,14 +430,12 @@ Characters in this story, in JSON format:
 
 Story Continuation Guidelines:
 - React naturally to the player's choice
-- Show immediate and potential long-term consequences
-- Keep the narrative flowing smoothly
-- Consider previous story beats when crafting the response
-- Maintain consistent characterization
+- It's okay for some characters to have bad reactions to the player and for the player to fail in some ways. That is more realistic and makes for a more interesting game. Consider Difficulty, Intensity, and current Stress to help determine how positive or negative the outcome is
+- Consider whether the player's choice is inline or divergent from their personality
 
 Your response must use the provided function to return:
 - A clear story_text describing what happened based on the previous choice made
-- Separate from the story_text, also return 4 distinct response options that {life.name} could take. Make options feel meaningfully different and include a mix of options that both align with and run counter to various personality traits. Include one option that seems less likely to 'successfully' resolve the situation, but leans more heavily into the player characters's traits in a way that might reduce stress.
+- Separate from the story_text, also return 4 distinct response options that {life.name} could take. Make options feel meaningfully different and could lead the story in different directions. Include at least one option that correlates to {life.name}'s personality and at least one option that conflicts with {life.name}'s personality.
 - DO NOT mentioning the options in the main story_text as it would be redundant"""
     return base_prompt + continue_specific
 
@@ -458,10 +453,8 @@ Characters in this story, in JSON format:
 
 Story Conclusion Guidelines:
 - React naturally to the player's choice
-- Show immediate and potential long-term consequences
-- Keep the narrative flowing smoothly
-- Consider previous story beats when crafting the response
-- Maintain consistent characterization
+- It's okay for some characters to have bad reactions to the player and for the player to fail in some ways. That is more realistic and makes for a more interesting game. Consider Difficulty, Intensity, and current Stress to help determine how positive or negative the outcome is
+- Consider whether the player's choice is inline or divergent from their personality
 
 Your response must use the provided function to return:
 - Story text concluding this sequence
@@ -540,19 +533,15 @@ MEMORY_TOOLS = [{
                         "required": ["name", "value"]
                     }
                 },
-                "character_ids_of_featured_characters": {
-                    "type": "array",
-                    "items": {"type": "string"},
-                    "description": "List the IDs of characters that had a role in this story"
-                },
                 "character_changes": {
                     "type": "array",
+                    "description": "Characters present in the story that should have their details updated (especially relationship_description)",
                     "items": {
                         "type": "object",
                         "properties": {
                             "id": {
                                 "type": "string",
-                                "description": "The ID of the character being updated"
+                                "description": "The database ID of the character being updated (not their name)"
                             },
                             "physical_description": {
                                 "type": "string",
@@ -564,15 +553,15 @@ MEMORY_TOOLS = [{
                             },
                             "relationship_description": {
                                 "type": "string",
-                                "description": "Updated description of relationship to the player character. Always begin the relationship description with a sentence specifying the base type of relationship, like 'Father', 'Mother', 'Sister', 'Brother', 'Friend', 'Boss', 'Teacher', 'Girlfriend', 'Husband', and so on - and then a sentence which describes the state of the relationship."
+                                "description": "Updated description of relationship to the player character. Always begin the relationship description with a sentence specifying the base type of relationship, like 'Father', 'Mother', 'Sister', 'Brother', 'Friend', 'Boss', 'Teacher', 'Girlfriend', 'Husband', and so on - and then a sentence which describes the current state of the relationship."
                             },
                             "relationship_status": {
                                 "type": "string",
                                 "enum": ["Active", "Departed", "Deceased"],
-                                "description": "Updated status of the relationship"
+                                "description": "Updated status of this character"
                             }
                         },
-                        "required": ["id", "personality_description", "relationship_description"]
+                        "required": ["id", "relationship_description"]
                     }
                 },
                 "stress_change": {
@@ -615,6 +604,8 @@ def generate_memory_from_story(life: Life, story: Story) -> Dict:
         
         # Build prompt
         prompt = build_memory_generation_prompt(life, story)
+
+        print(prompt)
         
         # Make API call
         response = client.chat.completions.create(
@@ -676,7 +667,7 @@ def build_memory_generation_prompt(life: Life, story: Story) -> str:
     character_summary = build_character_summary(life)
 
     # Get character information for characters involved in this story
-    characters_json = Character.format_characters_for_ai(story.character_ids, life_id=life._id)
+    characters_json = Character.format_characters_for_ai(life_id=life._id)
 
     intensity_guidelines = build_intensity_guidelines(life.intensity, life.difficulty)
     memories_json = Memory.format_memories_for_ai(life._id)
@@ -700,28 +691,26 @@ Guidelines for Memory Generation:
    - Generate a concise but meaningful title
    - Write a clear, specific description that captures the key moments
    - Importance (1-3) should reflect how much this event matters to {life.name}. 1=dealing with typical life events (e.g. going to a party, completing a homework assignment). 2=a significant change in {life.name}'s life (e.g. winning a major award, making a new friend). 3=a critical, life-changing event (e.g. death of a friend, first kiss)
-   - Permanence (1-3) should reflect how long this memory will matter. 1=short term, only matters for the current year. 2=matters throughout the current life stage. 3=permanent core memory, never forgotten
+   - Permanence (1-3) should reflect how long this memory will matter. 1=short term, only matters for the current year. 2=matters throughout the current life stage. 3=permanent core memory, never forgotten. Err towards shorter Permanence unless it really matters.
    - Tags should be specific and meaningful
 
-2. Impact Guidelines:
-   - Individual trait changes cannot exceed +2 or -2
-   - Consider both direct effects and subtle influences
-   - Not every story needs to affect every aspect
-   - Changes should feel natural given the story events
-   - Modify or create one or two secondary traits. Secondary traits are more specific and focused than OCEAN traits. Change (or initalize) the value from +2 to -2.
-   - Stress changes can range from -50 to +50. Consider the choices the player made, their risk level, and how much they diverge from the character's traits. Consider the success or failure of the event. Consider any positive or negative reactions to the player's actions.
+2. Ocean and Secondary Trait Changes Guidelines:
+   - Focus on the player's choices for their character. Consider if the player made choices that were inline with or in opposition to their current traits.
+   - Consider only one or two Ocean traits that were most significant in the scene
+   - Ocean trait changes cannot exceed +2 or -2
+   - Modify or create one or two secondary traits. Change (or initalize) the value from +2 to -2. Secondary traits represent more specific personality traits like 'integrity' or 'artistic', skills like 'cooking skill' or 'video game skills', and interests/preferences like 'coffee lover'. Be creative when coming up with secondary traits, but stay within the context of the story.
+   - Stress changes can range from -50 to +50. Consider the choices the player made, their risk level, and how much they diverge from the character's traits. Decisions counter to the player's personality traits should generate more stress, even if the event was resolved successfully. The player's current stress is {life.current_stress}%.
+   - Account for the difficulty & intensity settings
 
 3. Tag Selection:
    - Emotional tags should reflect the character's feelings
    - Context tags should capture the situation and setting
    - Story tags should identify the type of experience (e.g., "coming of age", "first love", "personal triumph")
 
-4. Character Development:
-   - Consider how choices aligned with or challenged current traits
-   - Account for the difficulty and intensity settings
-   - Consider current stress levels when determining impact
-   - Think about long-term character development
+4. Changes to Characters:
    - For any characters involved in the story, provide updated character descriptions that reflect how this interaction affected them
+   - Be especially certain to update relationship_description if there has been any change or development in the relationship with the player 
+   - It's okay for some characters to have bad reactions to the player. That is more realistic and makes for a more interesting game
    - IMPORTANT: When referring to characters in character_changes, use their exact ID from the Characters list above
 
 Process the story and create a memory that captures both what happened and how it affected {life.name}."""
