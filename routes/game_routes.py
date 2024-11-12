@@ -5,7 +5,7 @@ from flask_wtf.csrf import generate_csrf
 from models.session import Session
 from models.user import User
 from models.game.life import Life
-from models.game.story import Story, StoryStatus
+from models.game.story import Story, StoryStatus, stories
 from .auth_decorator import login_required
 import logging
 from typing import Optional
@@ -18,7 +18,6 @@ from models.game.base import Ocean, Trait
 from models.game.story_ai import begin_story, continue_story, conclude_story, generate_memory_from_story, generate_initial_cast
 from models.game.memory import Memory
 from models.game.character import Character, RelationshipStatus
-import asyncio
 
 game_bp = Blueprint('game', __name__)
 logger = logging.getLogger(__name__)
@@ -269,8 +268,17 @@ def new_story():
         if existing_story and not existing_story.completed:
             return jsonify({'error': 'There is already an active story'}), 400
 
+        # Check if this is the first story ever for this life
+        story_count = stories.count_documents({'life_id': current_life._id})
+        is_first_story = story_count == 0
+
+        # Set custom seed for first story
+        custom_story_seed = ""
+        if is_first_story:
+            custom_story_seed = f"This is {current_life.name}'s first day at Quillington High School. They have just moved to town over the summer. This story should focus on the nerves and excitement that accompany such an event."
+
         # Get story beginning
-        story_response = begin_story(current_life)
+        story_response = begin_story(current_life, custom_story_seed)
 
         # Create new story object
         story = Story(
@@ -285,13 +293,14 @@ def new_story():
         # Return rendered partial template
         return render_template('game/partials/story.html', 
                       story=story,
-                      StoryStatus=StoryStatus,  # Add this line
+                      StoryStatus=StoryStatus,
                       csrf_token=generate_csrf())
 
     except Exception as e:
         import traceback
         logger.error(f"Error creating new story: {str(e)}\n{traceback.format_exc()}")
         return jsonify({'error': str(e)}), 500
+    
 
 @game_bp.route('/game/story/choose', methods=['POST'])
 @login_required

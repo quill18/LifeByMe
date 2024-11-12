@@ -59,7 +59,7 @@ STORY_TOOLS = [{
     }
 }]
 
-def begin_story(life: Life) -> StoryResponse:
+def begin_story(life: Life, custom_story_seed: str) -> StoryResponse:
     """Generate the first beat of a new story"""
     logger.info(f"Starting new story for life {life._id}")
     
@@ -73,7 +73,7 @@ def begin_story(life: Life) -> StoryResponse:
         client = OpenAI(api_key=user.openai_api_key)
         
         # Build prompt
-        prompt = build_story_begin_prompt(life)
+        prompt = build_story_begin_prompt(life, custom_story_seed)
 
         print(prompt)
         
@@ -302,13 +302,14 @@ def build_character_summary(life: Life) -> str:
         traits_desc.append(f"{trait[0]}: {trait[1]}")
     
     summary = [
-        f"{life.name} is a {life.age}-year-old {gender_desc} in {life.life_stage.value}.",
+        f"{life.name} is {life.age}-year-old",
+        f"Gender: {gender_desc}",
+        f"Life Stage: {life.life_stage.value}",
         f"Personality: {', '.join(traits_desc)}" if traits_desc else None,
-        f"Current stress level: {life.current_stress}/100",
-        f"Game intensity: {life.intensity.value}",
-        f"Game difficulty: {life.difficulty.value}"
+        f"Current stress level: {life.current_stress}%"
     ]
-    
+
+
     if life.custom_directions:
         summary.append(f"Special character notes: {life.custom_directions}")
         
@@ -386,12 +387,18 @@ Story Guidelines:
 6. Stories will occur over three beats, representing a beginning, middle, and conclusion"""
 
 
-def build_story_begin_prompt(life: Life) -> str:
+def build_story_begin_prompt(life: Life, custom_story_seed:str) -> str:
     """Build the complete prompt for starting a new story"""
     base_prompt = build_base_prompt(life)
     
     # Get character information
     characters_json = Character.format_characters_for_ai(life_id=life._id)
+
+    if custom_story_seed:
+        custom_story_seed = f"\n\nSTORY SCENARIO: {custom_story_seed}"
+    else:
+        custom_story_seed = ""
+        
 
     begin_specific = f"""
 
@@ -407,7 +414,7 @@ Story Beginning Guidelines:
 Your response must use the provided function to return:
 - A clear story_text describing the initial situation. If {life.name} is highly stressed (> 70), the situation should reflect that and feel more challenging.
 - Separate from the story_text, also return 4 distinct response options that {life.name} could take. Make options feel meaningfully different and could lead the story in different directions. Options that align with {life.name}'s traits may feel comfortable and reduce stress. Options that conflict with {life.name}'s traits may provide opportunites for change, but could cause stress. Include at least one option that correlates to {life.name}'s personality and at least one option that conflicts with {life.name}'s personality.
-- DO NOT mentioning the options in the main story_text as it would be redundant"""
+- DO NOT mentioning the options in the main story_text as it would be redundant{custom_story_seed}"""
 
     return base_prompt + begin_specific
 
@@ -654,11 +661,11 @@ def build_memory_generation_prompt(life: Life, story: Story) -> str:
             traits_desc.append(f"{trait[0]}: {trait[1]}")
         
         summary = [
-            f"{life.name} is a {life.age}-year-old {gender_desc} in {life.life_stage.value}.",  # Use .value here
+            f"{life.name} is {life.age}-year-old",
+            f"Gender: {gender_desc}",
+            f"Life Stage: {life.life_stage.value}",
             f"Personality: {', '.join(traits_desc)}" if traits_desc else None,
-            f"Current stress level: {life.current_stress}/100",
-            f"Game intensity: {life.intensity.value}",  # Use .value here
-            f"Game difficulty: {life.difficulty.value}"  # Use .value here
+            f"Current stress level: {life.current_stress}%"
         ]
         
         if life.custom_directions:
@@ -732,7 +739,7 @@ GENERATE_CAST_TOOLS = [{
                     "items": {
                         "type": "object",
                         "properties": {
-                            "name": {"type": "string"},
+                            "name": {"type": "string", "description": "FirstName LastName"},
                             "age": {"type": "integer", "minimum": 35, "maximum": 55},
                             "gender": {"type": "string"},
                             "physical_description": {"type": "string"},
@@ -753,7 +760,7 @@ GENERATE_CAST_TOOLS = [{
                     "items": {
                         "type": "object",
                         "properties": {
-                            "name": {"type": "string"},
+                            "name": {"type": "string", "description": "FirstName LastName"},
                             "age": {"type": "integer", "minimum": 13, "maximum": 19},
                             "gender": {"type": "string"},
                             "physical_description": {"type": "string"},
@@ -769,7 +776,7 @@ GENERATE_CAST_TOOLS = [{
                     "items": {
                         "type": "object",
                         "properties": {
-                            "name": {"type": "string"},
+                            "name": {"type": "string", "description": "FirstName LastName"},
                             "age": {"type": "integer", "minimum": 25, "maximum": 65},
                             "gender": {"type": "string"},
                             "physical_description": {"type": "string"},
@@ -850,7 +857,9 @@ For relationship descriptions:
 - Make sure to explicitly mention the base relationship. Example: "So-and-so is {life.name}'s mother." or "So-and-so is {life.name}'s classmate at Quillington High School."
 - Parents/Siblings: Describe the pre-existing family dynamic. Note that {life.name} has {num_siblings} siblings.
 - Teachers: Mention that this is {life.name}'s teacher, then specify that {life.name} has not yet met them, then describe how they will likely act upon first meeting {life.name}
-- Classmates: Mention that this is {life.name}'s classmate, then specify that {life.name} has not yet met them, then describe how they will likely act upon first meeting {life.name}"""
+- Classmates: Mention that this is {life.name}'s classmate, then specify that {life.name} has not yet met them, then describe how they will likely act upon first meeting {life.name}
+
+All characters must have a first and last name. If the player character ({life.name}) doesn't seem to have a last name, invent one for their family members. Do not include titles (Mr/Ms/Dr) in names, not even for teachers."""
 
         print(prompt)
 

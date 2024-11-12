@@ -34,7 +34,7 @@
         
         <div class="form-group" id="customGenderGroup" style="display: {{ 'block' if form_data and form_data.gender == 'Custom' else 'none' }};">
             <label for="customGender">Custom Gender</label>
-            <input type="text" id="customGender" name="custom_gender" maxlength="50"
+            <input type="text" id="customGender" name="custom_gender" maxlength="50" placeholder="My pronouns are 'they/them' and I have [physical traits]"
                    value="{{ form_data.custom_gender if form_data else '' }}">
             <div class="character-count"><span id="genderCount">{{ form_data.custom_gender|length if form_data else 0 }}</span>/50</div>
         </div>
