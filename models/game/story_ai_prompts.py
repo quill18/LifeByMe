@@ -81,7 +81,8 @@ def build_base_prompt(life: 'life_module.Life') -> str:
         character_summary=character_summary,
         intensity_guidelines=intensity_guidelines,
         memories_json=memories_json,
-        name=life.name
+        name=life.name,
+        season_and_year=f"{life.current_season} {life.current_year}"
     )
 
 def build_story_begin_prompt(life: 'life_module.Life', custom_story_seed: str) -> str:

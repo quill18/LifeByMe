@@ -125,12 +125,12 @@ MEMORY_TOOLS = [{
                 },
                 "secondary_trait_changes": {
                     "type": "array",
-                    "description": "Changes to secondary traits and/or skills",
+                    "description": "Changes to secondary traits and/or skills - or the creation of a completely new secondary trait",
                     "items": {
                         "type": "object",
                         "properties": {
                             "name": {"type": "string"},
-                            "value": {"type": "integer", "minimum": -10, "maximum": 10}
+                            "value": {"type": "integer", "minimum": -20, "maximum": 20}
                         },
                         "required": ["name", "value"]
                     }

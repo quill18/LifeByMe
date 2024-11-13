@@ -39,7 +39,10 @@ Story Guidelines:
 
 5. Limit the story text length of each beat to a single short paragraph. Make sure the story_text doesn't include the options
 
-6. Stories will occur over three beats, representing a beginning, middle, and conclusion"""
+6. Stories will occur over three beats, representing a beginning, middle, and conclusion
+
+Be sure to pay attention to the Season and Year ({season_and_year}) in which the story is occuring. Avoid anachronisms!
+"""
 
 # Additional prompt text for starting a new story
 STORY_BEGIN_TEMPLATE = """
@@ -102,7 +105,7 @@ Character's Memory History, in chronological order:
 
 Guidelines for Memory Generation:
 
-1. Memory Creation:
+Memory Creation:
    - Generate a concise but meaningful title
    - Write a clear, specific description that captures the key moments
    - Set Importance (1-3) based on how meaningful this event is:
@@ -116,7 +119,7 @@ Guidelines for Memory Generation:
      * 3 = permanent core memory, never forgotten
    - Err towards shorter Permanence unless it really matters
 
-2. Trait Analysis:
+Primary Trait Analysis:
    - Based on the Importance value (1-3), analyze that many primary traits
    - Choose the traits that were most significantly expressed or challenged in the story
    - For each analyzed trait, determine what level (0-100) that trait appeared to be throughout the story
@@ -125,7 +128,13 @@ Guidelines for Memory Generation:
    - For each trait analyzed, provide clear reasoning that references specific story beats and choices
    - Remember that a trait value of 50 represents an average, typical level
 
-3. Stress Analysis:
+Secondary Trait Changes:
+   - Secondary traits represent more specific personality traits like 'integrity' or 'family dependence', skills like 'cooking skill' or 'video game skills', and interests/preferences like 'coffee lover')
+   - You can modify an existing secondary trait from +20 to -20 if you think that trait was developed or regressed.
+   - You can create one new Secondary Trait and give it an initial value of up to 20
+   - It's fine for these traits to be extremely niche and specific, as this can be interesting to the player
+
+Stress Analysis:
    - Evaluate the overall stress level of this story (0-100)
    - 0 = completely stress-free situation
    - 25 = mild everyday stress (preparing homework, meeting new people)
@@ -139,12 +148,12 @@ Guidelines for Memory Generation:
      * Did {name} have to act against their usual traits?
    - Provide clear reasoning for the stress level chosen
 
-4. Tag Selection:
+Tag Selection:
    - Emotional tags should reflect the character's feelings
    - Context tags should capture the situation and setting
    - Story tags should identify the type of experience (e.g., "coming of age", "personal growth")
 
-5. Changes to Characters:
+Changes to Characters:
    - For any characters involved in the story, provide updated character descriptions
    - Be especially certain to update relationship_description if there has been any change. Consider all memories of events involving that character and describe the character's relationship to the player holistically, taking into account both past interactions and their current, more immediate situation.
    - It's okay for some characters to have bad reactions to the player as this can make the story more interesting

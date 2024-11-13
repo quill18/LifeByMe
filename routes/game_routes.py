@@ -473,7 +473,6 @@ def make_memory(story_id):
             life_stage=current_life.life_stage,
             age_experienced=current_life.age,
             impact_explanation=memory_data['impact_explanation'],
-            # New fields:
             analyzed_traits=[
                 TraitAnalysis(
                     name=t['name'],
@@ -485,10 +484,12 @@ def make_memory(story_id):
             stress_reasoning=memory_data['stress_reasoning'],
             stress_change=memory_data['stress_change'],
             character_ids=character_ids,
-            source_story_id=story._id
+            source_story_id=story._id,
+            # Add these new fields:
+            season=current_life.current_season,
+            year=current_life.current_year
         )
         memory.save()
-
         # Apply memory effects to life
         current_life.apply_memory(memory)
 

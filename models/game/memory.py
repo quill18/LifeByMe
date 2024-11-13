@@ -9,6 +9,7 @@ from models.game.life import LifeStage
 from models.game.character import Character
 from config import Config
 from .base import Trait
+from .enums import Season
 import json
 
 client = MongoClient(Config.MONGO_URI)
@@ -60,12 +61,16 @@ class Memory:
     story_stress: int  # 0-100
     stress_reasoning: str
     stress_change: int  # Final calculated stress change
-    
+    season: Season
+    year: int
+
+
     character_ids: List[ObjectId] = field(default_factory=list)
     source_story_id: Optional[ObjectId] = None
     created_at: datetime = field(default_factory=datetime.utcnow)
     recontextualized_at: Optional[datetime] = None
     _id: ObjectId = field(default_factory=ObjectId)
+
 
     def to_dict(self) -> Dict:
         """Convert Memory to dictionary for database storage"""
@@ -91,7 +96,9 @@ class Memory:
             'character_ids': [str(char_id) for char_id in self.character_ids],
             'source_story_id': str(self.source_story_id) if self.source_story_id else None,
             'created_at': self.created_at,
-            'recontextualized_at': self.recontextualized_at
+            'recontextualized_at': self.recontextualized_at,
+            'season': self.season.value,
+            'year': self.year,
         }
         return base_dict
 
@@ -120,7 +127,9 @@ class Memory:
             character_ids=[ObjectId(id_str) for id_str in data.get('character_ids', [])],
             source_story_id=ObjectId(data['source_story_id']) if data.get('source_story_id') else None,
             created_at=data.get('created_at', datetime.utcnow()),
-            recontextualized_at=data.get('recontextualized_at')
+            recontextualized_at=data.get('recontextualized_at'),
+            season=Season(data.get('season')),
+            year=data.get('year'),
         )
 
     @staticmethod
@@ -159,6 +168,8 @@ class Memory:
                     'description': memory.description,
                     'life_stage': life_stage,
                     'age_experienced': memory.age_experienced,
+                    'season': memory.season.value,
+                    'year': memory.year
                     #'emotional_tags': memory.emotional_tags,
                     #'context_tags': memory.context_tags,
                     #'trait_impacts': trait_impacts,

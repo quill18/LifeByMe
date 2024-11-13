@@ -16,7 +16,8 @@
         <div class="memory-metadata">
             <span class="age">Age {{ memory.age_experienced }}</span>
             <span class="life-stage">{{ memory.life_stage }}</span>
-            <span class="date">{{ memory.created_at.strftime('%Y-%m-%d') }}</span>
+            <span class="date">{{ memory.season.value }} {{ memory.year }}</span>
+            <span class="created-at">{{ memory.created_at.strftime('%Y-%m-%d') }}</span>
         </div>
     </div>
 
