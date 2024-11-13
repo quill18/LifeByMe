@@ -24,6 +24,16 @@
                 </div>
                 <div class="character-metadata-group">
                     <div class="metadata-item">
+                        <span class="metadata-label">Season:</span>
+                        <span class="metadata-value">{{ life.current_season.value }} {{ life.current_year }}</span>
+                    </div>
+                    <div class="metadata-item">
+                        <span class="metadata-label">Stories:</span>
+                        <span class="metadata-value">{{ life.stories_this_season }} / {{ config['STORIES_PER_SEASON'] }}</span>
+                    </div>
+                </div>
+                <div class="character-metadata-group">
+                    <div class="metadata-item">
                         <span class="metadata-label">Difficulty:</span>
                         <span class="metadata-value">{{ life.difficulty.value }}</span>
                     </div>

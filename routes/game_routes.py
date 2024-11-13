@@ -531,6 +531,8 @@ def make_memory(story_id):
         # Mark story as completed
         story.complete_with_memory(memory._id)
 
+        current_life.increment_story_count()
+
         # Redirect to memory view
         return jsonify({
             'success': True,

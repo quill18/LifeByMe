@@ -17,3 +17,16 @@ class Difficulty(Enum):
     STORY = "Story"
     BALANCED = "Balanced"
     CHALLENGING = "Challenging"
+
+class Season(Enum):
+    SPRING = "Spring"
+    SUMMER = "Summer"
+    AUTUMN = "Autumn"
+    WINTER = "Winter"
+
+    def next_season(self) -> 'Season':
+        seasons = list(Season)
+        current_index = seasons.index(self)
+        next_index = (current_index + 1) % len(seasons)
+        return seasons[next_index]
+

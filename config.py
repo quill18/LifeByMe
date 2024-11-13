@@ -25,3 +25,5 @@ class Config:
 
     # API Configuration
     API_TIMEOUT = 30  # seconds
+
+    STORIES_PER_SEASON = 5
