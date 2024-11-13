@@ -6,6 +6,7 @@ from bson import ObjectId
 from dataclasses import dataclass, field
 from pymongo import MongoClient
 from models.game.life import LifeStage
+from models.game.character import Character
 from config import Config
 from .base import Trait
 import json
@@ -116,7 +117,6 @@ class Memory:
 
     def get_characters(self) -> List['Character']:
         """Get all characters involved in this memory"""
-        from .character import Character
         return [Character.get_by_id(char_id) for char_id in self.character_ids]
 
     def get_primary_trait_impact(self, trait_name: str) -> Optional[Trait]:
