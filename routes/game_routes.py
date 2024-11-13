@@ -462,10 +462,13 @@ def make_memory(story_id):
             emotional_tags=memory_data['emotional_tags'],
             context_tags=memory_data['context_tags'],
             story_tags=memory_data['story_tags'],
-            ocean_impact=Ocean.from_dict(memory_data['ocean_changes']),
-            trait_impacts=[
+            primary_trait_impacts=[
                 Trait(t['name'], t['value']) 
-                for t in memory_data.get('trait_changes', [])
+                for t in memory_data.get('primary_trait_changes', [])
+            ],
+            secondary_trait_impacts=[
+                Trait(t['name'], t['value']) 
+                for t in memory_data.get('secondary_trait_changes', [])
             ],
             life_stage=current_life.life_stage,
             age_experienced=current_life.age,

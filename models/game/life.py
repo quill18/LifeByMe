@@ -121,25 +121,25 @@ class Life:
     def apply_memory(self, memory: Memory) -> None:
         """Apply a memory's impacts to the life"""
         # Update or add primary traits
-        for trait_impact in memory.trait_impacts:
+        for primary_trait_impact in memory.primary_trait_impacts:
             # Find matching primary trait if it exists
-            if trait_impact.name in PRIMARY_TRAITS:
+            if primary_trait_impact.name in PRIMARY_TRAITS:
                 primary_trait = next(
-                    (t for t in self.primary_traits if t.name == trait_impact.name),
+                    (t for t in self.primary_traits if t.name == primary_trait_impact.name),
                     None
                 )
                 if primary_trait:
-                    primary_trait.value = (primary_trait + trait_impact).value
+                    primary_trait.value = (primary_trait + primary_trait_impact).value
+        # Handle secondary trait
+        for secondary_trait_impact in memory.secondary_trait_impacts:
+            existing_trait = next(
+                (t for t in self.secondary_traits if t.name == secondary_trait_impact.name),
+                None
+            )
+            if existing_trait:
+                existing_trait.value = (existing_trait + secondary_trait_impact).value
             else:
-                # Handle secondary trait
-                existing_trait = next(
-                    (t for t in self.secondary_traits if t.name == trait_impact.name),
-                    None
-                )
-                if existing_trait:
-                    existing_trait.value = (existing_trait + trait_impact).value
-                else:
-                    self.secondary_traits.append(Trait(trait_impact.name, trait_impact.value))
+                self.secondary_traits.append(Trait(secondary_trait_impact.name, secondary_trait_impact.value))
 
         # Update stress
         self.current_stress = max(0, min(100, self.current_stress + memory.stress_impact))
