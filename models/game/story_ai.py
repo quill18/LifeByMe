@@ -25,6 +25,7 @@ def begin_story(life: 'life_module.Life', custom_story_seed: str) -> ai_utils.St
     
     # Build prompt
     prompt = prompts.build_story_begin_prompt(life, custom_story_seed)
+    print(prompt)
     
     # Make API call
     response = client.chat.completions.create(
@@ -65,6 +66,7 @@ def continue_story(life: 'life_module.Life', story: 'story_module.Story', select
     
     # Build prompt
     prompt = prompts.build_story_continue_prompt(life, story)
+    print(prompt)
     
     # Make API call
     response = client.chat.completions.create(
@@ -111,6 +113,7 @@ def conclude_story(life: 'life_module.Life', story: 'story_module.Story', select
     
     # Build prompt
     prompt = prompts.build_story_conclusion_prompt(life, story)
+    print(prompt)
     
     # Make API call
     response = client.chat.completions.create(
@@ -148,7 +151,7 @@ def generate_memory_from_story(life: 'life_module.Life', story: 'story_module.St
     # Create OpenAI client
     client, model = ai_utils.create_openai_client(life)
     
-    # Build story context
+    # Build story context showing complete story progression
     story_context = "\n\n".join([
         "Story progression:",
         *[f"Beat: {beat}\nResponse: {response if response else 'Final beat'}" 
@@ -157,6 +160,7 @@ def generate_memory_from_story(life: 'life_module.Life', story: 'story_module.St
     
     # Build prompt
     prompt = prompts.build_memory_generation_prompt(life, story)
+    print(prompt)
     
     # Make API call
     response = client.chat.completions.create(
@@ -176,14 +180,48 @@ Generate a memory based on this story."""}
     # Parse response
     result = ai_utils.parse_openai_response(response, "create_memory")
     
-    # Store memory parameters in story
-    story.store_memory_params(
-        title=result["title"],
-        description=result["description"],
-        params=result
+    # Create dictionary of current trait values
+    current_traits = {trait.name: trait.value for trait in life.primary_traits}
+    
+    # Process the memory response to calculate trait and stress changes
+    processed_result = ai_utils.process_memory_response(
+        result,
+        current_traits,
+        life.current_stress,
+        life.difficulty
     )
     
-    return result
+    # Log the trait analysis for debugging
+    logger.info(f"Memory trait analysis for story {story._id}:")
+    for trait in processed_result['calculated_traits']:
+        logger.info(f"  {trait['name']}: {trait['calculated_value']} "
+                   f"(Current: {current_traits.get(trait['name'], 0)}) "
+                   f"- {trait['reasoning']}")
+    logger.info(f"Story stress: {processed_result['story_stress']} "
+                f"(Current: {life.current_stress}) "
+                f"- {processed_result['stress_reasoning']}")
+    
+    # Validate required fields
+    if not (1 <= processed_result['importance'] <= 3):
+        raise ValueError(f"Invalid importance value: {processed_result['importance']}")
+    if not (1 <= processed_result['permanence'] <= 3):
+        raise ValueError(f"Invalid permanence value: {processed_result['permanence']}")
+    if not (0 <= processed_result['story_stress'] <= 100):
+        raise ValueError(f"Invalid story stress value: {processed_result['story_stress']}")
+    
+    # Validate trait analysis
+    #if len(processed_result['trait_analysis']['analyzed_traits']) != processed_result['importance']:
+    #    raise ValueError(f"Number of analyzed traits ({len(processed_result['trait_analysis']['analyzed_traits'])}) "
+    #                    f"does not match importance ({processed_result['importance']})")
+    
+    # Store processed memory parameters in story
+    story.store_memory_params(
+        title=processed_result['title'],
+        description=processed_result['description'],
+        params=processed_result
+    )
+    
+    return processed_result
 
 @ai_utils.handle_openai_error
 def generate_initial_cast(life: 'life_module.Life') -> List['character_module.Character']:

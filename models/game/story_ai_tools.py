@@ -54,7 +54,7 @@ MEMORY_TOOLS = [{
                     "type": "integer",
                     "minimum": 1,
                     "maximum": 3,
-                    "description": "How important this memory is (1-3)"
+                    "description": "How important this memory is (1-3). This also determines how many primary traits should be analyzed"
                 },
                 "permanence": {
                     "type": "integer",
@@ -77,25 +77,55 @@ MEMORY_TOOLS = [{
                     "items": {"type": "string"},
                     "description": "List of story-type tags"
                 },
+                "trait_analysis": {
+                    "type": "object",
+                    "description": "Analysis of 1-3 primary traits (equal to importance) that were most relevant to this story",
+                    "properties": {
+                        "analyzed_traits": {
+                            "type": "array",
+                            "items": {
+                                "type": "object",
+                                "properties": {
+                                    "name": {
+                                        "type": "string",
+                                        "enum": ["Curiosity", "Discipline", "Confidence", "Empathy", "Resilience", "Ambition"]
+                                    },
+                                    "calculated_value": {
+                                        "type": "integer",
+                                        "minimum": 0,
+                                        "maximum": 100,
+                                        "description": "What value (0-100) this trait appeared to be throughout the story, heavily weighted towards player choices"
+                                    },
+                                    "reasoning": {
+                                        "type": "string",
+                                        "description": "Brief explanation of why this trait was chosen and how the value was determined"
+                                    }
+                                },
+                                "required": ["name", "calculated_value", "reasoning"]
+                            },
+                            "minItems": 1,
+                            "maxItems": 3
+                        }
+                    },
+                    "required": ["analyzed_traits"]
+                },
+                "story_stress": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 100,
+                    "description": "How stressful this story was (0-100). 0 is completely stress-free, 100 is one of the most stressful situations a person could experience"
+                },
+                "stress_reasoning": {
+                    "type": "string",
+                    "description": "Brief explanation of why the story_stress value was chosen"
+                },
                 "impact_explanation": {
                     "type": "string",
-                    "description": "Brief explanation of why the memory affects primary traits, secondary traits, relationships, and stress levels the way it does - and why you choose the Importance and Permanence you did"
-                },
-                "primary_trait_changes": {
-                    "type": "array",
-                    "description": "Changes to primary character traits",
-                    "items": {
-                        "type": "object",
-                        "properties": {
-                            "name": {"type": "string"},
-                            "value": {"type": "integer", "minimum": -10, "maximum": 10}
-                        },
-                        "required": ["name", "value"]
-                    }
+                    "description": "Brief explanation of why the memory is important and permanent (or not)"
                 },
                 "secondary_trait_changes": {
                     "type": "array",
-                    "description": "One or two secondary traits that have been created or modified by this memory",
+                    "description": "Changes to secondary traits and/or skills",
                     "items": {
                         "type": "object",
                         "properties": {
@@ -107,13 +137,13 @@ MEMORY_TOOLS = [{
                 },
                 "character_changes": {
                     "type": "array",
-                    "description": "Characters present in the story that should have their details updated (especially relationship_description)",
+                    "description": "Characters present in the story that should have their details updated",
                     "items": {
                         "type": "object",
                         "properties": {
                             "id": {
                                 "type": "string",
-                                "description": "The database ID of the character being updated (not their name)"
+                                "description": "The database ID of the character being updated"
                             },
                             "physical_description": {
                                 "type": "string",
@@ -125,7 +155,7 @@ MEMORY_TOOLS = [{
                             },
                             "relationship_description": {
                                 "type": "string",
-                                "description": "Updated description of relationship to the player character. Always begin the relationship description with a sentence specifying the base type of relationship, like 'Father', 'Mother', 'Sister', 'Brother', 'Friend', 'Boss', 'Teacher', 'Girlfriend', 'Husband', and so on - and then a sentence which describes the current state of the relationship."
+                                "description": "Updated description of relationship to the player character"
                             },
                             "relationship_status": {
                                 "type": "string",
@@ -135,18 +165,13 @@ MEMORY_TOOLS = [{
                         },
                         "required": ["id", "relationship_description"]
                     }
-                },
-                "stress_change": {
-                    "type": "integer",
-                    "minimum": -50,
-                    "maximum": 50,
-                    "description": "Change in stress level (-50 to +50)"
                 }
             },
             "required": [
                 "title", "description", "importance", "permanence", 
                 "emotional_tags", "context_tags", "story_tags",
-                "impact_explanation", "primary_trait_changes", "stress_change", "character_changes"
+                "impact_explanation", "trait_analysis", "story_stress", 
+                "stress_reasoning", "character_changes"
             ]
         }
     }

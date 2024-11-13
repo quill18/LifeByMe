@@ -142,7 +142,7 @@ class Life:
                 self.secondary_traits.append(Trait(secondary_trait_impact.name, secondary_trait_impact.value))
 
         # Update stress
-        self.current_stress = max(0, min(100, self.current_stress + memory.stress_impact))
+        self.current_stress = max(0, min(100, self.current_stress + memory.stress_change))
 
         # Save changes
         self.save()

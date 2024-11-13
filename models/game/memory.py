@@ -19,6 +19,27 @@ import logging
 logger = logging.getLogger(__name__)
 
 @dataclass
+class TraitAnalysis:
+    name: str
+    calculated_value: int
+    reasoning: str
+        
+    def to_dict(self) -> Dict:
+        return {
+            'name': self.name,
+            'calculated_value': self.calculated_value,
+            'reasoning': self.reasoning
+        }
+        
+    @classmethod
+    def from_dict(cls, data: Dict) -> 'TraitAnalysis':
+        return cls(
+            name=data['name'],
+            calculated_value=data['calculated_value'],
+            reasoning=data['reasoning']
+        )
+
+@dataclass
 class Memory:
     life_id: ObjectId
     title: str
@@ -27,13 +48,19 @@ class Memory:
     permanence: int  # 1-3
     emotional_tags: List[str]
     context_tags: List[str]
-    story_tags: List[str]  # e.g., "coming of age", "first love"
+    story_tags: List[str]
     primary_trait_impacts: List[Trait]
     secondary_trait_impacts: List[Trait]
     life_stage: LifeStage
     age_experienced: int
     impact_explanation: str
-    stress_impact: int
+    
+    # New fields for trait analysis and stress
+    analyzed_traits: List[TraitAnalysis]
+    story_stress: int  # 0-100
+    stress_reasoning: str
+    stress_change: int  # Final calculated stress change
+    
     character_ids: List[ObjectId] = field(default_factory=list)
     source_story_id: Optional[ObjectId] = None
     created_at: datetime = field(default_factory=datetime.utcnow)
@@ -42,7 +69,7 @@ class Memory:
 
     def to_dict(self) -> Dict:
         """Convert Memory to dictionary for database storage"""
-        return {
+        base_dict = {
             '_id': self._id,
             'life_id': self.life_id,
             'title': self.title,
@@ -57,12 +84,16 @@ class Memory:
             'life_stage': self.life_stage.value,
             'age_experienced': self.age_experienced,
             'impact_explanation': self.impact_explanation,
-            'stress_impact': self.stress_impact,
+            'analyzed_traits': [trait.to_dict() for trait in self.analyzed_traits],
+            'story_stress': self.story_stress,
+            'stress_reasoning': self.stress_reasoning,
+            'stress_change': self.stress_change,
             'character_ids': [str(char_id) for char_id in self.character_ids],
             'source_story_id': str(self.source_story_id) if self.source_story_id else None,
             'created_at': self.created_at,
             'recontextualized_at': self.recontextualized_at
         }
+        return base_dict
 
     @classmethod
     def from_dict(cls, data: Dict) -> 'Memory':
@@ -82,12 +113,66 @@ class Memory:
             life_stage=data['life_stage'],
             age_experienced=data['age_experienced'],
             impact_explanation=data['impact_explanation'],
-            stress_impact=data['stress_impact'],
+            analyzed_traits=[TraitAnalysis.from_dict(t) for t in data.get('analyzed_traits', [])],
+            story_stress=data.get('story_stress', 0),
+            stress_reasoning=data.get('stress_reasoning', ''),
+            stress_change=data.get('stress_change', 0),
             character_ids=[ObjectId(id_str) for id_str in data.get('character_ids', [])],
             source_story_id=ObjectId(data['source_story_id']) if data.get('source_story_id') else None,
             created_at=data.get('created_at', datetime.utcnow()),
             recontextualized_at=data.get('recontextualized_at')
         )
+
+    @staticmethod
+    def format_memories_for_ai(life_id: ObjectId) -> str:
+        """Format all non-faded memories as JSON for the AI, sorted by creation date"""
+        try:
+            # Get all memories for this life where permanence > 0
+            memory_data = memories.find({
+                'life_id': life_id,
+                'permanence': {'$gt': 0}
+            }).sort('created_at', 1)  # 1 for ascending order (oldest first)
+            
+            memories_list = []
+            for mem_data in memory_data:
+                memory = Memory.from_dict(mem_data)
+                life_stage = memory.life_stage
+                if isinstance(life_stage, LifeStage):
+                    life_stage = life_stage.value
+                
+                # Include analyzed traits in the AI format
+                analyzed_traits = {
+                    trait.name: {
+                        'calculated_value': trait.calculated_value,
+                        'reasoning': trait.reasoning
+                    } for trait in memory.analyzed_traits
+                }
+                
+                # Format trait impacts for AI
+                trait_impacts = {
+                    "primary_traits": {t.name: t.value for t in memory.primary_trait_impacts if t.value != 0},
+                    "secondary_traits": {t.name: t.value for t in memory.secondary_trait_impacts if t.value != 0}
+                }
+                
+                memories_list.append({
+                    #'title': memory.title,
+                    'description': memory.description,
+                    'life_stage': life_stage,
+                    'age_experienced': memory.age_experienced,
+                    #'emotional_tags': memory.emotional_tags,
+                    #'context_tags': memory.context_tags,
+                    #'trait_impacts': trait_impacts,
+                    #'analyzed_traits': analyzed_traits,
+                    #'story_stress': memory.story_stress,
+                    #'stress_reasoning': memory.stress_reasoning,
+                    #'importance': memory.importance,
+                    #'permanence': memory.permanence
+                })
+            
+            return json.dumps(memories_list, indent=2)
+        except Exception as e:
+            logger.error(f"Error formatting memories for AI: {str(e)}")
+            return "[]"  # Return empty array in case of error
 
     def save(self) -> None:
         """Save memory to database"""
@@ -137,42 +222,3 @@ class Memory:
             return True
         return False
 
-    @staticmethod
-    def format_memories_for_ai(life_id: ObjectId) -> str:
-        """Format all non-faded memories as JSON for the AI, sorted by creation date"""
-        try:
-            # Get all memories for this life where permanence > 0
-            memory_data = memories.find({
-                'life_id': life_id,
-                'permanence': {'$gt': 0}
-            }).sort('created_at', 1)  # 1 for ascending order (oldest first)
-            
-            memories_list = []
-            for mem_data in memory_data:
-                memory = Memory.from_dict(mem_data)
-                # Handle life_stage which might be string or enum
-                life_stage = memory.life_stage
-                if isinstance(life_stage, LifeStage):
-                    life_stage = life_stage.value
-                
-                # Format trait impacts for AI
-                trait_impacts = {
-                    "primary_traits": {t.name: t.value for t in memory.primary_trait_impacts if t.value != 0},
-                    "secondary_traits": {t.name: t.value for t in memory.secondary_trait_impacts if t.value != 0}
-                }
-                
-                memories_list.append({
-                    'title': memory.title,
-                    'description': memory.description,
-                    'life_stage': life_stage,
-                    'age_experienced': memory.age_experienced,
-                    'emotional_tags': memory.emotional_tags,
-                    'context_tags': memory.context_tags,
-                    'trait_impacts': trait_impacts,
-                    'stress_impact': memory.stress_impact
-                })
-            
-            return json.dumps(memories_list, indent=2)
-        except Exception as e:
-            logger.error(f"Error formatting memories for AI: {str(e)}")
-            return "[]"  # Return empty array in case of error

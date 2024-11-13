@@ -17,7 +17,7 @@ from typing import Tuple, List
 from models.game.life import PRIMARY_TRAITS
 from models.game.base import Trait
 from models.game.story_ai import begin_story, continue_story, conclude_story, generate_memory_from_story, generate_initial_cast
-from models.game.memory import Memory
+from models.game.memory import Memory, TraitAnalysis
 from models.game.character import Character, RelationshipStatus
 import traceback
 
@@ -229,7 +229,7 @@ def new_life():
             current_employment=None,
             primary_traits=Life.generate_random_primary_traits(),
             secondary_traits=[],
-            current_stress=0
+            current_stress=25
         )
         
         # Save to database
@@ -290,7 +290,7 @@ def new_story():
         if story_count == 0:
             custom_story_seed.append(
                 f"This is {current_life.name}'s first day at Quillington High School. "
-                "They have just moved to town over the summer. "
+                "They and their family have just moved to town over the summer. {current_life.name} doesn't know anyone at school yet"
                 "This story should focus on the nerves and excitement that accompany such an event."
             )
         
@@ -473,7 +473,17 @@ def make_memory(story_id):
             life_stage=current_life.life_stage,
             age_experienced=current_life.age,
             impact_explanation=memory_data['impact_explanation'],
-            stress_impact=memory_data['stress_change'],
+            # New fields:
+            analyzed_traits=[
+                TraitAnalysis(
+                    name=t['name'],
+                    calculated_value=t['calculated_value'],
+                    reasoning=t['reasoning']
+                ) for t in memory_data['trait_analysis']['analyzed_traits']
+            ],
+            story_stress=memory_data['story_stress'],
+            stress_reasoning=memory_data['stress_reasoning'],
+            stress_change=memory_data['stress_change'],
             character_ids=character_ids,
             source_story_id=story._id
         )

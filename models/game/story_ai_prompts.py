@@ -7,6 +7,7 @@ import models.game.memory as memory_module
 import models.game.character as character_module
 import models.game.story as story_module
 from models.game.enums import Intensity, Difficulty
+import random
 
 logger = logging.getLogger(__name__)
 
@@ -14,35 +15,48 @@ def build_character_summary(life: 'life_module.Life') -> str:
     """Create a concise character summary for the AI"""
     gender_desc = life.custom_gender if life.gender == "Custom" else life.gender
     
+    # Format traits with more detail and explicit values
     traits_desc = []
     for trait in life.primary_traits:
-        traits_desc.append(f"{trait.name}: {trait.value}/100")
+        interpretation = "very low" if trait.value < 20 else \
+                        "low" if trait.value < 40 else \
+                        "average" if trait.value < 60 else \
+                        "high" if trait.value < 80 else "very high"
+        traits_desc.append(f"{trait.name}: {trait.value}/100 ({interpretation})")
     
-    summary = [
+    # Build the summary parts
+    summary_parts = [
         f"{life.name} is {life.age}-year-old",
         f"Gender: {gender_desc}",
         f"Life Stage: {life.life_stage.value}",
-        f"Primary Traits: {', '.join(traits_desc)}" if traits_desc else None,
-        f"Current stress level: {life.current_stress}%"
+        "Primary Traits:"
     ]
+    
+    # Add traits if they exist
+    if traits_desc:
+        summary_parts.extend(f"- {trait}" for trait in traits_desc)
+    
+    # Add stress level
+    summary_parts.append(f"Current stress level: {life.current_stress}%")
 
+    # Add custom directions if they exist
     if life.custom_directions:
-        summary.append(f"Special character notes: {life.custom_directions}")
+        summary_parts.append(f"Special character notes: {life.custom_directions}")
         
-    return "\n".join(filter(None, summary))
+    return "\n".join(summary_parts)
 
 def build_intensity_guidelines(intensity: Intensity, difficulty: Difficulty) -> str:
     """Get detailed intensity guidelines based on user selection"""
     intensity_text = ""
 
     if intensity == Intensity.LIGHT:
-        intensity_text =  """This story should maintain a LIGHT intensity level. Keep the tone optimistic and uplifting. Focus on positive personal growth and achievements. Handle conflicts through communication and understanding. Avoid topics that could be triggering or distressing. Use humor and warmth appropriately. Keep any romance at a sweet, innocent level."""
+        intensity_text = """This story should maintain a LIGHT intensity level. Keep the tone optimistic and uplifting. Focus on positive personal growth and achievements. Handle conflicts through communication and understanding. Avoid topics that could be triggering or distressing. Use humor and warmth appropriately. Keep any romance at a sweet, innocent level."""
     
     elif intensity == Intensity.MODERATE:
-        intensity_text =  """This story should maintain a MODERATE intensity level. Provide meaningful, realistic challenges. Allow for both success and setbacks. Include realistic interpersonal conflicts. Touch on serious topics. Show consequences for actions while maintaining hope. Handle romance at a realistic but tasteful level. Allow for anxiety and stress. Keep darker elements brief and resolution-focused."""
+        intensity_text = """This story should maintain a MODERATE intensity level. Provide meaningful, realistic challenges. Allow for both success and setbacks. Include realistic interpersonal conflicts. Touch on serious topics. Show consequences for actions while maintaining hope. Handle romance at a realistic but tasteful level. Allow for anxiety and stress. Keep darker elements brief and resolution-focused."""
     
     else:  # GRITTY
-        intensity_text =  """This story should maintain a GRITTY intensity level. Present realistic challenges without guaranteed resolution. Allow for meaningful failures and their consequences. Explore complex emotional and interpersonal situations. Address serious real-world issues directly. Handle romance, relationships, and sexuality realistically. Include genuine struggles with identity and values. Don't shy away from internal conflicts and doubts. Remember that growth can come from difficulty."""
+        intensity_text = """This story should maintain a GRITTY intensity level. Present realistic challenges without guaranteed resolution. Allow for meaningful failures and their consequences. Explore complex emotional and interpersonal situations. Address serious real-world issues directly. Handle romance, relationships, and sexuality realistically. Include genuine struggles with identity and values. Don't shy away from internal conflicts and doubts. Remember that growth can come from difficulty."""
 
     if difficulty == Difficulty.STORY:
         intensity_text += """\n\nDifficulty is set to STORY mode. The character should generally succeed at their chosen actions, though the manner and consequences of success may vary. Failures should be rare and primarily serve character development rather than creating serious setbacks. Provide clear paths to achieve desired outcomes. If stress is below 30, try to generate a story that will generate stress, but judge actual stress generation based on the character's choices, traits, and story outcome"""
@@ -54,6 +68,7 @@ def build_intensity_guidelines(intensity: Intensity, difficulty: Difficulty) -> 
         intensity_text += """\n\nDifficulty is set to CHALLENGING mode. Success should be earned and never guaranteed. Actions that go against the character's established traits can still succeed, but at the cost of personal stress. Create meaningful obstacles that require careful choice selection. Let failures have lasting impact, though allow for eventual recovery and growth. If stress is below 70, try to generate a story that will generate stress, but judge actual stress generation based on the character's choices, traits, and story outcome."""
 
     return intensity_text
+
 
 def build_base_prompt(life: 'life_module.Life') -> str:
     """Build the base system prompt for all story interactions"""
@@ -82,24 +97,37 @@ def build_story_begin_prompt(life: 'life_module.Life', custom_story_seed: str) -
         custom_story_seed=custom_story_seed
     )
 
+def build_story_success_hint(life: 'life_module.Life') -> str:
+    """Randomly determine if this story beat should be a failure based on difficulty setting"""
+    
+    failure_chance = 0.2 if life.difficulty == Difficulty.CHALLENGING else \
+                    0.1 if life.difficulty == Difficulty.BALANCED else 0.05
+    
+    if random.random() < failure_chance:
+        return "\n\nIMPORTANT: This story beat should represent a NEGATIVE OUTCOME for the character. Consider past memories for context and make sure that all characters still behave appropriately. This negative outcome could represent a failure by the player character, but it could also be a rejection or antipathy by another character, representing an obstacle in their relationship."
+    
+    return ""
+
 def build_story_continue_prompt(life: 'life_module.Life', story: 'story_module.Story') -> str:
     """Build the prompt for continuing a story"""
     base_prompt = build_base_prompt(life)
     characters_json = character_module.Character.format_characters_for_ai(life_id=life._id)
+    success_hint = build_story_success_hint(life)
     
     return base_prompt + templates.STORY_CONTINUE_TEMPLATE.format(
         characters_json=characters_json,
         name=life.name
-    )
+    ) + success_hint
 
 def build_story_conclusion_prompt(life: 'life_module.Life', story: 'story_module.Story') -> str:
     """Build the prompt for concluding a story"""
     base_prompt = build_base_prompt(life)
     characters_json = character_module.Character.format_characters_for_ai(life_id=life._id)
+    success_hint = build_story_success_hint(life)
     
     return base_prompt + templates.STORY_CONCLUSION_TEMPLATE.format(
         characters_json=characters_json
-    )
+    ) + success_hint
 
 def build_memory_generation_prompt(life: 'life_module.Life', story: 'story_module.Story') -> str:
     """Build the prompt for memory generation from a story"""

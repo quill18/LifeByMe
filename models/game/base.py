@@ -34,8 +34,12 @@ class Trait:
 
     @classmethod
     def random(cls, name: str) -> 'Trait':
-        """Create a new Trait with a random value between 0 and 100"""
+        """Create a new Trait with a random value between 0 and 100, following a normal distribution centered on 50"""
+        # Using standard deviation of 15 gives a nice bell curve where ~95% of values fall within ±30 of the mean
+        value = int(random.gauss(50, 15))
+        # Clamp value between 0 and 100
+        value = max(0, min(100, value))
         return cls(
             name=name,
-            value=random.randint(0, 100)
+            value=value
         )

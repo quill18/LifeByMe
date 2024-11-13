@@ -11,7 +11,6 @@
         <a href="{{ url_for('game.game') }}" class="button primary">Back to Game</a>
     </div>
 
-
     <div class="memory-header">
         <h2>{{ memory.title }}</h2>
         <div class="memory-metadata">
@@ -67,10 +66,31 @@
             <div class="impact-explanation">
                 <p>{{ memory.impact_explanation }}</p>
             </div>
+
+            {% if memory.analyzed_traits %}
+            <div class="impact-section">
+                <h4>Trait Analysis</h4>
+                <div class="trait-analysis">
+                    {% for trait in memory.analyzed_traits %}
+                    <div class="analyzed-trait">
+                        <div class="trait-header">
+                            <span class="trait-name">{{ trait.name }}</span>
+                            <span class="trait-values">
+                                Expressed as: <span class="calculated-value">{{ trait.calculated_value }}/100</span>
+                            </span>
+                        </div>
+                        <div class="trait-reasoning">
+                            {{ trait.reasoning }}
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
         
             {% if memory.primary_trait_impacts %}
             <div class="impact-section">
-                <h4>Core Traits</h4>
+                <h4>Resulting Trait Changes</h4>
                 <div class="trait-changes">
                     {% for trait in memory.primary_trait_impacts %}
                         {% if trait.value != 0 %}
@@ -122,8 +142,20 @@
 
             <div class="impact-section">
                 <h4>Stress Impact</h4>
-                <div class="stress-change {% if memory.stress_impact > 0 %}stress-increase{% elif memory.stress_impact < 0 %}stress-decrease{% endif %}">
-                    {{ '+' if memory.stress_impact > 0 }}{{ memory.stress_impact }}
+                <div class="stress-analysis">
+                    <div class="story-stress">
+                        <span class="stress-label">Story Stress Level:</span>
+                        <span class="stress-value">{{ memory.story_stress }}/100</span>
+                    </div>
+                    <div class="stress-reasoning">
+                        {{ memory.stress_reasoning }}
+                    </div>
+                    <div class="final-stress">
+                        <span class="stress-label">Final Stress Change:</span>
+                        <span class="stress-value {% if memory.stress_change > 0 %}stress-increase{% elif memory.stress_change < 0 %}stress-decrease{% endif %}">
+                            {{ '+' if memory.stress_change > 0 }}{{ memory.stress_change }}
+                        </span>
+                    </div>
                 </div>
             </div>
         </div>
