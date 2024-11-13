@@ -68,16 +68,16 @@
                 <p>{{ memory.impact_explanation }}</p>
             </div>
         
-            {% if memory.ocean_impact.has_changes() %}
+            {% if memory.primary_trait_impacts %}
             <div class="impact-section">
                 <h4>Core Traits</h4>
                 <div class="trait-changes">
-                    {% for trait, value in memory.ocean_impact.to_dict().items() %}
-                        {% if value != 0 %}
+                    {% for trait in memory.primary_trait_impacts %}
+                        {% if trait.value != 0 %}
                         <div class="trait-change">
-                            <span class="trait-name">{{ trait|title }}</span>
-                            <span class="trait-value {% if value > 0 %}positive{% elif value < 0 %}negative{% endif %}">
-                                {{ '+' if value > 0 }}{{ value }}
+                            <span class="trait-name">{{ trait.name }}</span>
+                            <span class="trait-value {% if trait.value > 0 %}positive{% elif trait.value < 0 %}negative{% endif %}">
+                                {{ '+' if trait.value > 0 }}{{ trait.value }}
                             </span>
                         </div>
                         {% endif %}
@@ -86,11 +86,11 @@
             </div>
             {% endif %}
 
-            {% if memory.trait_impacts %}
+            {% if memory.secondary_trait_impacts %}
             <div class="impact-section">
                 <h4>Secondary Traits</h4>
                 <div class="trait-changes">
-                    {% for trait in memory.trait_impacts %}
+                    {% for trait in memory.secondary_trait_impacts %}
                     <div class="trait-change">
                         <span class="trait-name">{{ trait.name }}</span>
                         <span class="trait-value {% if trait.value > 0 %}positive{% elif trait.value < 0 %}negative{% endif %}">

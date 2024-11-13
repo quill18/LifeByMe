@@ -35,28 +35,14 @@
             </div>
         </div>
                 
-        <div class="ocean-traits">
+        <div class="primary-traits">
             <h3>Core Traits</h3>
+            {% for trait_name in PRIMARY_TRAITS %}
             <div class="trait">
-                <span class="trait-name">Openness</span>
-                <span class="trait-value">{{ life.ocean.openness }}</span>
+                <span class="trait-name">{{ trait_name }}</span>
+                <span class="trait-value">{{ life.primary_traits|selectattr("name", "equalto", trait_name)|map(attribute="value")|first }}/100</span>
             </div>
-            <div class="trait">
-                <span class="trait-name">Conscientiousness</span>
-                <span class="trait-value">{{ life.ocean.conscientiousness }}</span>
-            </div>
-            <div class="trait">
-                <span class="trait-name">Extraversion</span>
-                <span class="trait-value">{{ life.ocean.extraversion }}</span>
-            </div>
-            <div class="trait">
-                <span class="trait-name">Agreeableness</span>
-                <span class="trait-value">{{ life.ocean.agreeableness }}</span>
-            </div>
-            <div class="trait">
-                <span class="trait-name">Neuroticism</span>
-                <span class="trait-value">{{ life.ocean.neuroticism }}</span>
-            </div>
+            {% endfor %}
         </div>
         
         <div class="stress-info">

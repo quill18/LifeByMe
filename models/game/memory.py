@@ -7,7 +7,7 @@ from dataclasses import dataclass, field
 from pymongo import MongoClient
 from models.game.life import LifeStage
 from config import Config
-from .base import Ocean, Trait
+from .base import Trait
 import json
 
 client = MongoClient(Config.MONGO_URI)
@@ -27,8 +27,8 @@ class Memory:
     emotional_tags: List[str]
     context_tags: List[str]
     story_tags: List[str]  # e.g., "coming of age", "first love"
-    ocean_impact: Ocean
-    trait_impacts: List[Trait]
+    primary_trait_impacts: List[Trait]
+    secondary_trait_impacts: List[Trait]
     life_stage: LifeStage
     age_experienced: int
     impact_explanation: str
@@ -51,8 +51,8 @@ class Memory:
             'emotional_tags': self.emotional_tags,
             'context_tags': self.context_tags,
             'story_tags': self.story_tags,
-            'ocean_impact': self.ocean_impact.to_dict(),
-            'trait_impacts': [trait.to_dict() for trait in self.trait_impacts],
+            'primary_trait_impacts': [trait.to_dict() for trait in self.primary_trait_impacts],
+            'secondary_trait_impacts': [trait.to_dict() for trait in self.secondary_trait_impacts],
             'life_stage': self.life_stage.value,
             'age_experienced': self.age_experienced,
             'impact_explanation': self.impact_explanation,
@@ -76,8 +76,8 @@ class Memory:
             emotional_tags=data['emotional_tags'],
             context_tags=data['context_tags'],
             story_tags=data['story_tags'],
-            ocean_impact=Ocean.from_dict(data['ocean_impact']),
-            trait_impacts=[Trait.from_dict(t) for t in data['trait_impacts']],
+            primary_trait_impacts=[Trait.from_dict(t) for t in data['primary_trait_impacts']],
+            secondary_trait_impacts=[Trait.from_dict(t) for t in data['secondary_trait_impacts']],
             life_stage=data['life_stage'],
             age_experienced=data['age_experienced'],
             impact_explanation=data['impact_explanation'],
@@ -87,7 +87,6 @@ class Memory:
             created_at=data.get('created_at', datetime.utcnow()),
             recontextualized_at=data.get('recontextualized_at')
         )
-
 
     def save(self) -> None:
         """Save memory to database"""
@@ -119,7 +118,25 @@ class Memory:
         """Get all characters involved in this memory"""
         from .character import Character
         return [Character.get_by_id(char_id) for char_id in self.character_ids]
-    
+
+    def get_primary_trait_impact(self, trait_name: str) -> Optional[Trait]:
+        """Get the impact on a specific primary trait"""
+        return next((t for t in self.primary_trait_impacts if t.name == trait_name), None)
+
+    def get_secondary_trait_impact(self, trait_name: str) -> Optional[Trait]:
+        """Get the impact on a specific secondary trait"""
+        return next((t for t in self.secondary_trait_impacts if t.name == trait_name), None)
+
+    def has_trait_changes(self) -> bool:
+        """Check if there are any trait changes in this memory"""
+        # Check primary traits
+        if any(trait.value != 0 for trait in self.primary_trait_impacts):
+            return True
+        # Check secondary traits
+        if any(trait.value != 0 for trait in self.secondary_trait_impacts):
+            return True
+        return False
+
     @staticmethod
     def format_memories_for_ai(life_id: ObjectId) -> str:
         """Format all non-faded memories as JSON for the AI, sorted by creation date"""
@@ -138,10 +155,20 @@ class Memory:
                 if isinstance(life_stage, LifeStage):
                     life_stage = life_stage.value
                 
+                # Format trait impacts for AI
+                trait_impacts = {
+                    "primary_traits": {t.name: t.value for t in memory.primary_trait_impacts if t.value != 0},
+                    "secondary_traits": {t.name: t.value for t in memory.secondary_trait_impacts if t.value != 0}
+                }
+                
                 memories_list.append({
+                    'title': memory.title,
                     'description': memory.description,
                     'life_stage': life_stage,
                     'age_experienced': memory.age_experienced,
+                    'emotional_tags': memory.emotional_tags,
+                    'context_tags': memory.context_tags,
+                    'trait_impacts': trait_impacts,
                     'stress_impact': memory.stress_impact
                 })
             

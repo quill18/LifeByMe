@@ -7,14 +7,23 @@ from dataclasses import dataclass, field
 from pymongo import MongoClient
 from config import Config
 from .enums import LifeStage, Intensity, Difficulty
-from .base import Ocean, Trait
+from .base import Trait
 from .memory import Memory
 from models.utils import DatabaseError
-
 
 client = MongoClient(Config.MONGO_URI)
 db = client[Config.DB_NAME]
 lives = db.lives
+
+# Define primary traits
+PRIMARY_TRAITS = [
+    "Curiosity",    # intellectual curiosity, creativity, and willingness to try new things
+    "Discipline",   # self-control, organization, and dedication
+    "Confidence",   # self-assurance and social comfort
+    "Empathy",      # emotional intelligence and understanding of others
+    "Resilience",   # emotional stability and stress management
+    "Ambition"      # drive, goal-setting, and determination
+]
 
 @dataclass
 class Life:
@@ -28,8 +37,8 @@ class Life:
     custom_directions: Optional[str]
     life_stage: LifeStage
     current_employment: Optional[str]
-    ocean: Ocean
-    traits: List[Trait]
+    primary_traits: List[Trait]
+    secondary_traits: List[Trait]
     current_stress: int = 0  # 0-100
     created_at: datetime = field(default_factory=datetime.utcnow)
     last_played: datetime = field(default_factory=datetime.utcnow)
@@ -49,8 +58,8 @@ class Life:
             'custom_directions': self.custom_directions,
             'life_stage': self.life_stage.value,
             'current_employment': self.current_employment,
-            'ocean': self.ocean.to_dict(),
-            'traits': [trait.to_dict() for trait in self.traits],
+            'primary_traits': [trait.to_dict() for trait in self.primary_traits],
+            'secondary_traits': [trait.to_dict() for trait in self.secondary_traits],
             'current_stress': self.current_stress,
             'created_at': self.created_at,
             'last_played': self.last_played,
@@ -71,15 +80,18 @@ class Life:
             custom_directions=data.get('custom_directions'),
             life_stage=LifeStage(data['life_stage']),
             current_employment=data.get('current_employment'),
-            ocean=Ocean.from_dict(data['ocean']),
-            traits=[Trait.from_dict(t) for t in data['traits']],
+            primary_traits=[Trait.from_dict(t) for t in data['primary_traits']],
+            secondary_traits=[Trait.from_dict(t) for t in data['secondary_traits']],
             current_stress=data.get('current_stress', 0),
             created_at=data.get('created_at', datetime.utcnow()),
             last_played=data.get('last_played', datetime.utcnow()),
             archived=data.get('archived', False)
         )
 
-
+    @staticmethod
+    def generate_random_primary_traits() -> List[Trait]:
+        """Generate a list of random primary traits"""
+        return [Trait.random(name) for name in PRIMARY_TRAITS]
 
     def save(self) -> None:
         """Save life to database"""
@@ -108,19 +120,26 @@ class Life:
 
     def apply_memory(self, memory: Memory) -> None:
         """Apply a memory's impacts to the life"""
-        # Update OCEAN traits
-        self.ocean = self.ocean + memory.ocean_impact
-
-        # Update or add secondary traits
-        for impact in memory.trait_impacts:
-            existing_trait = next(
-                (t for t in self.traits if t.name == impact.name), 
-                None
-            )
-            if existing_trait:
-                existing_trait.value = (existing_trait + impact).value
+        # Update or add primary traits
+        for trait_impact in memory.trait_impacts:
+            # Find matching primary trait if it exists
+            if trait_impact.name in PRIMARY_TRAITS:
+                primary_trait = next(
+                    (t for t in self.primary_traits if t.name == trait_impact.name),
+                    None
+                )
+                if primary_trait:
+                    primary_trait.value = (primary_trait + trait_impact).value
             else:
-                self.traits.append(Trait(impact.name, impact.value))
+                # Handle secondary trait
+                existing_trait = next(
+                    (t for t in self.secondary_traits if t.name == trait_impact.name),
+                    None
+                )
+                if existing_trait:
+                    existing_trait.value = (existing_trait + trait_impact).value
+                else:
+                    self.secondary_traits.append(Trait(trait_impact.name, trait_impact.value))
 
         # Update stress
         self.current_stress = max(0, min(100, self.current_stress + memory.stress_impact))
@@ -149,4 +168,4 @@ class Life:
             lives.delete_one({'_id': self._id})
             
         except Exception as e:
-            raise DatabaseError(f"Error deleting life: {str(e)}")        
+            raise DatabaseError(f"Error deleting life: {str(e)}")

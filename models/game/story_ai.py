@@ -100,16 +100,6 @@ def begin_story(life: Life, custom_story_seed: str) -> StoryResponse:
             cleaned_args = clean_text_for_json(tool_call.function.arguments)
             result = json.loads(cleaned_args)
         
-        # Create Story object
-        #story = Story(
-        #    life_id=life._id,
-        #    prompt=prompt,
-        #    beats=[(clean_text_for_json(result["story_text"]), None)],
-        #    current_options=[clean_text_for_json(opt) for opt in result["options"]],
-        #    character_ids=[ObjectId(char_id) for char_id in result["character_ids"]]
-        #)
-        #story.save()
-        
         # Create and return StoryResponse
         return StoryResponse(
             prompt=prompt,
@@ -298,17 +288,16 @@ def build_character_summary(life: Life) -> str:
     gender_desc = life.custom_gender if life.gender == "Custom" else life.gender
     
     traits_desc = []
-    for trait in life.ocean.to_dict().items():
-        traits_desc.append(f"{trait[0]}: {trait[1]}")
+    for trait in life.primary_traits:
+        traits_desc.append(f"{trait.name}: {trait.value}/100")
     
     summary = [
         f"{life.name} is {life.age}-year-old",
         f"Gender: {gender_desc}",
         f"Life Stage: {life.life_stage.value}",
-        f"Personality: {', '.join(traits_desc)}" if traits_desc else None,
+        f"Primary Traits: {', '.join(traits_desc)}" if traits_desc else None,
         f"Current stress level: {life.current_stress}%"
     ]
-
 
     if life.custom_directions:
         summary.append(f"Special character notes: {life.custom_directions}")
@@ -360,10 +349,13 @@ Character's Memory History, in chronological order:
 Make sure the player is experiencing a variety of different events, while also sometimes revisiting previous plot points - especially if they are important, life-affecting moments.
 
 Story Guidelines:
-1. Incorporate {life.name}'s personality traits naturally:
-   - Traits range from +10 to -10
-   - Traits closer to the extreme values of +10 or -10 should have a greater impact on story beat generation and the options available to the player.
-   - Actions that align with a character's traits represent the character's natural, instinctive response to events, but could represent complacency. Actions counter to a character's traits could be a tremendous source of stress, but could represent an opportunity to grow or change.
+
+1. Incorporate {life.name}'s traits naturally:
+   - Primary traits (Curiosity, Discipline, Confidence, Empathy, Resilience, Ambition) range from 0 to 100
+   - Higher trait values represent greater development in that area and should have a stronger influence on story options
+   - Secondary traits also range from 0 to 100 and represent more specific characteristics
+   - Actions that align with a character's traits represent their natural response but may lead to stagnation
+   - Actions that challenge a character's current traits are more stressful but provide opportunities for growth
 
 2. Consider stress levels:
    - Current stress affects emotional reactions
@@ -461,8 +453,6 @@ Your response must use the provided function to return:
 - ZERO response options"""
     return base_prompt + continue_specific
 
-
-
 MEMORY_TOOLS = [{
     "type": "function",
     "function": {
@@ -510,25 +500,26 @@ MEMORY_TOOLS = [{
                     "type": "string",
                     "description": "Brief explanation of why the memory affects primary traits, secondary traits, relationships, and stress levels the way it does - and why you choose the Importance and Permanence you did"
                 },
-                "ocean_changes": {
-                    "type": "object",
-                    "properties": {
-                        "openness": {"type": "integer", "minimum": -2, "maximum": 2},
-                        "conscientiousness": {"type": "integer", "minimum": -2, "maximum": 2},
-                        "extraversion": {"type": "integer", "minimum": -2, "maximum": 2},
-                        "agreeableness": {"type": "integer", "minimum": -2, "maximum": 2},
-                        "neuroticism": {"type": "integer", "minimum": -2, "maximum": 2}
-                    },
-                    "required": ["openness", "conscientiousness", "extraversion", "agreeableness", "neuroticism"]
+                "primary_trait_changes": {
+                    "type": "array",
+                    "description": "Changes to primary character traits",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "name": {"type": "string"},
+                            "value": {"type": "integer", "minimum": -10, "maximum": 10}
+                        },
+                        "required": ["name", "value"]
+                    }
                 },
-                "trait_changes": {
+                "secondary_trait_changes": {
                     "type": "array",
                     "description": "One or two secondary traits that have been created or modified by this memory",
                     "items": {
                         "type": "object",
                         "properties": {
                             "name": {"type": "string"},
-                            "value": {"type": "integer", "minimum": -2, "maximum": 2}
+                            "value": {"type": "integer", "minimum": -10, "maximum": 10}
                         },
                         "required": ["name", "value"]
                     }
@@ -574,7 +565,7 @@ MEMORY_TOOLS = [{
             "required": [
                 "title", "description", "importance", "permanence", 
                 "emotional_tags", "context_tags", "story_tags",
-                "impact_explanation", "ocean_changes", "stress_change",  "character_changes"
+                "impact_explanation", "primary_trait_changes", "stress_change", "character_changes"
             ]
         }
     }
@@ -642,29 +633,7 @@ Generate a memory based on this story."""}
 
 def build_memory_generation_prompt(life: Life, story: Story) -> str:
     """Build the prompt for memory generation from a story"""
-    # Modify the character summary function first
-    def build_character_summary(life: Life) -> str:
-        """Create a concise character summary for the AI"""
-        gender_desc = life.custom_gender if life.gender == "Custom" else life.gender
-        
-        traits_desc = []
-        for trait in life.ocean.to_dict().items():
-            traits_desc.append(f"{trait[0]}: {trait[1]}")
-        
-        summary = [
-            f"{life.name} is {life.age}-year-old",
-            f"Gender: {gender_desc}",
-            f"Life Stage: {life.life_stage.value}",
-            f"Personality: {', '.join(traits_desc)}" if traits_desc else None,
-            f"Current stress level: {life.current_stress}%"
-        ]
-        
-        if life.custom_directions:
-            summary.append(f"Special character notes: {life.custom_directions}")
-            
-        return "\n".join(filter(None, summary))
-
-    character_summary = build_character_summary(life)
+    character_summary = build_character_summary(life)  # We already updated this function earlier
 
     # Get character information for characters involved in this story
     characters_json = Character.format_characters_for_ai(life_id=life._id)
@@ -694,11 +663,12 @@ Guidelines for Memory Generation:
    - Permanence (1-3) should reflect how long this memory will matter. 1=short term, only matters for the current year. 2=matters throughout the current life stage. 3=permanent core memory, never forgotten. Err towards shorter Permanence unless it really matters.
    - Tags should be specific and meaningful
 
-2. Ocean and Secondary Trait Changes Guidelines:
+2. Trait Change Guidelines:
    - Focus on the player's choices for their character. Consider if the player made choices that were inline with or in opposition to their current traits.
-   - Consider only one or two Ocean traits that were most significant in the scene
-   - Ocean trait changes cannot exceed +2 or -2
-   - Modify or create one or two secondary traits. Change (or initalize) the value from +2 to -2. Secondary traits represent more specific personality traits like 'integrity' or 'artistic', skills like 'cooking skill' or 'video game skills', and interests/preferences like 'coffee lover'. Be creative when coming up with secondary traits, but stay within the context of the story.
+   - Consider one or two primary traits (Curiosity, Discipline, Confidence, Empathy, Resilience, Ambition) that were most significant in the scene.
+   - Primary trait changes cannot exceed +10 or -10
+   - Consider creating or modifying one or two secondary traits. Secondary traits represent more specific personality traits like 'integrity' or 'artistic', skills like 'cooking skill' or 'video game skills', and interests/preferences like 'coffee lover'. Be creative but contextual.
+   - Secondary trait changes also cannot exceed +10 or -10
    - Stress changes can range from -50 to +50. Consider the choices the player made, their risk level, and how much they diverge from the character's traits. Decisions counter to the player's personality traits should generate more stress, even if the event was resolved successfully. The player's current stress is {life.current_stress}%.
    - Account for the difficulty & intensity settings
 

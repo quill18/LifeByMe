@@ -8,7 +8,6 @@ class LifeStage(Enum):
     RETIRED = "Retired"
     CHILDHOOD = "Childhood"
 
-
 class Intensity(Enum):
     LIGHT = "Light"
     MODERATE = "Moderate"

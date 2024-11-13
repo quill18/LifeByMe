@@ -14,7 +14,8 @@ from bson import ObjectId
 from models.game.enums import LifeStage, Intensity, Difficulty
 import bleach
 from typing import Tuple, List
-from models.game.base import Ocean, Trait
+from models.game.life import PRIMARY_TRAITS
+from models.game.base import Trait
 from models.game.story_ai import begin_story, continue_story, conclude_story, generate_memory_from_story, generate_initial_cast
 from models.game.memory import Memory
 from models.game.character import Character, RelationshipStatus
@@ -61,13 +62,13 @@ def game():
     active_characters = [c for c in characters if c.relationship_status == RelationshipStatus.ACTIVE]
     active_characters.sort(key=lambda x: x.name.lower())  # Case-insensitive sort
 
-
     return render_template('game/game.html',
                          user=user,
                          life=current_life,
                          story=current_story,
                          active_characters=active_characters,
-                         StoryStatus=StoryStatus,  # Add this line
+                         StoryStatus=StoryStatus,
+                         PRIMARY_TRAITS=PRIMARY_TRAITS,
                          csrf_token=generate_csrf())
 
 
@@ -226,8 +227,8 @@ def new_life():
             difficulty=Difficulty[form_data['difficulty']],
             custom_directions=bleach.clean(form_data['custom_directions']),
             current_employment=None,
-            ocean=Ocean.random(),
-            traits=[],
+            primary_traits=Life.generate_random_primary_traits(),
+            secondary_traits=[],
             current_stress=0
         )
         
@@ -594,15 +595,9 @@ def get_traits():
         if not current_life:
             return jsonify({'error': 'No active life'}), 400
 
-        # Sort traits by absolute value to show strongest traits first
-        #sorted_traits = sorted(
-            #current_life.traits, 
-            #key=lambda t: abs(t.value), 
-            #reverse=True
-        #)
         # Sort traits alphabetically by name
         sorted_traits = sorted(
-            current_life.traits, 
+            current_life.secondary_traits,  # Changed from life.traits 
             key=lambda t: t.name
         )        
         
@@ -611,10 +606,9 @@ def get_traits():
         })
 
     except Exception as e:
-        logger.error(f"Error getting traits: {str(e)}")
+        logger.error(f"Error getting traits: {str(e)}\n{traceback.format_exc()}")
         return jsonify({'error': str(e)}), 500
-
-
+    
 @game_bp.route('/game/memories', methods=['GET'])
 @login_required
 def get_memories():

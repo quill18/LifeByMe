@@ -345,12 +345,12 @@ footer {
     margin-bottom: 0.5rem;
 }
 
-/* OCEAN Traits Section */
-.ocean-traits {
+/* Primary Traits Section */
+.primary-traits {
     margin-bottom: 2rem;
 }
 
-.ocean-traits h3 {
+.primary-traits h3 {
     margin-bottom: 1rem;
     color: var(--secondary-color);
 }
