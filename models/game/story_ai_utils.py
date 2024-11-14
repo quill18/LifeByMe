@@ -212,32 +212,58 @@ def process_trait_analysis(
     calculated_traits = []
     trait_changes = []
     
-    for trait_analysis in analyzed_traits:
-        name = trait_analysis['name']
-        calculated_value = trait_analysis['calculated_value']
-        current_value = current_traits.get(name, 0)
-        
-        # Calculate new value using weighted average
-        new_value = calculate_weighted_trait_value(
-            current_value, 
-            calculated_value,
-            importance,
-            permanence
-        )
-        
-        # Store the calculated trait analysis
-        calculated_traits.append({
-            'name': name,
-            'calculated_value': calculated_value,
-            'reasoning': trait_analysis['reasoning']
-        })
-        
-        # Store the actual change that will be applied
-        trait_changes.append({
-            'name': name,
-            'value': new_value - current_value
-        })
-    
+    logger.debug(f"Analyzing traits: {analyzed_traits}")
+    logger.debug(f"Current traits: {current_traits}")
+
+    try:
+        for trait_analysis in analyzed_traits:
+            if isinstance(trait_analysis, str):
+                logger.error(f"Received string instead of dict for trait analysis: {trait_analysis}")
+                continue
+                
+            if not isinstance(trait_analysis, dict):
+                logger.error(f"Invalid trait analysis type: {type(trait_analysis)}")
+                continue
+                
+            try:
+                name = trait_analysis.get('name')
+                calculated_value = trait_analysis.get('calculated_value')
+                reasoning = trait_analysis.get('reasoning')
+                
+                if not all([name, calculated_value is not None, reasoning]):
+                    logger.error(f"Missing required fields in trait analysis: {trait_analysis}")
+                    continue
+                
+                current_value = current_traits.get(name, 0)
+                
+                # Calculate new value using weighted average
+                new_value = calculate_weighted_trait_value(
+                    current_value, 
+                    calculated_value,
+                    importance,
+                    permanence
+                )
+                
+                # Store the calculated trait analysis
+                calculated_traits.append({
+                    'name': name,
+                    'calculated_value': calculated_value,
+                    'reasoning': reasoning
+                })
+                
+                # Store the actual change that will be applied
+                trait_changes.append({
+                    'name': name,
+                    'value': new_value - current_value
+                })
+                
+            except Exception as e:
+                logger.error(f"Error processing trait analysis: {str(e)}\nTrait data: {trait_analysis}")
+                continue
+            
+    except Exception as e:
+        logger.error(f"Error in process_trait_analysis: {str(e)}")
+
     return calculated_traits, trait_changes
 
 def process_memory_response(
