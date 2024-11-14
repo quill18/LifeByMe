@@ -25,11 +25,11 @@ The code is made available under GPL Version 3, and users are encouraged to fork
 
 While I don't plan to do long-term development on the project, I do intend to address these specific limitations:
 
-* **Time Progression**: Currently lacking a proper time system. Plan is to divide gameplay into seasons (starting with Fall of the character's Junior year of High School at 16 years old), with characters aging up one year every 4 seasons. Less important memories would naturally fade during these transitions.
+* **Time Progression**: ~~Currently lacking a proper time system. Plan is to divide gameplay into seasons (starting with Fall of the character's Junior year of High School at 16 years old), with characters aging up one year every 4 seasons. Less important memories would naturally fade during these transitions.~~ **Done!**
 
-* **Life Stage Changes**: Planning to implement progression from High School (2 years/8 seasons) to either College or Adulthood, with appropriate memory aging and character roster updates.
+* **Life Stage Changes**: Planning to implement progression from High School (after 2 years/8 seasons) to either College or Adulthood, with appropriate memory aging and character roster updates.
 
-* **Directed Stories**: In addition to random stories, add ability for players to request stories focused on specific traits, memories, or characters, with the option to guide development in particular directions (e.g., Romance-Development Stories, Skill-Development Stories, etc...)
+* **Directed Stories**: In addition to random stories, add ability for players to request stories focused on specific traits, memories, or characters, with the option to guide development in particular directions (e.g., Romance-Development Stories, Skill-Development Stories, etc...) **Partially done: You can request a theme (Friendship/Romance/Antagonism) and request a focus character.**
 
 ## Installation
 
