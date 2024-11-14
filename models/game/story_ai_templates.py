@@ -11,6 +11,8 @@ Intensity & Difficulty Guidelines: {intensity_guidelines}
 Character's Memory History, in chronological order:
 {memories_json}
 
+For previous memories, consider GAME YEAR and SEASON of the memory and how it compares to the current GAME YEAR and SEASON to get a sense of time and progression.
+
 Story Guidelines:
 
 1. Incorporate {name}'s traits naturally:
@@ -97,6 +99,8 @@ Intensity & Difficulty Guidelines: {intensity_guidelines}
 
 Character's Memory History, in chronological order:
 {memories_json}
+
+For previous memories, consider GAME YEAR and SEASON of the memory and how it compares to the current GAME YEAR and SEASON to get a sense of time and progression.
 
 Guidelines for Memory Generation:
 

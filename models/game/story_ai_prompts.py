@@ -29,7 +29,8 @@ def build_character_summary(life: 'life_module.Life') -> str:
         f"{life.name} is {life.age}-year-old",
         f"Gender: {gender_desc}",
         f"Life Stage: {life.life_stage.value}",
-        f"Current Season and Year: {life.current_season.value} {life.current_year}",
+        f"Current Game Year: {life.current_year}",
+        f"Current Season: {life.current_season.value}",
         "Primary Traits:"
     ]
     
