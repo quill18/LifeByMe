@@ -83,8 +83,7 @@ Story Conclusion Guidelines:
 - Consiser the impact of any secondary traits and skills (or lack thereof).
 
 Your response must use the provided function to return:
-- Story text concluding this sequence
-- ZERO response options"""
+- Story text concluding this sequence"""
 
 # Template for memory generation
 MEMORY_GENERATION_TEMPLATE = """You are analyzing a concluded story to determine its effects on the character and create a memory of what happened. Your task is to interpret the story's events and their impact on {name}.

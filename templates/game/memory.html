@@ -103,11 +103,12 @@
             </div>
             {% endif %}
 
-            {% if memory.secondary_trait_impacts %}
+            {% if memory.secondary_trait_modifications or memory.secondary_trait_additions %}
             <div class="impact-section">
-                <h4>Secondary Traits</h4>
+                {% if memory.secondary_trait_modifications %}
+                <h4>Secondary Trait Changes</h4>
                 <div class="trait-changes">
-                    {% for trait in memory.secondary_trait_impacts %}
+                    {% for trait in memory.secondary_trait_modifications %}
                     <div class="trait-change">
                         <span class="trait-name">{{ trait.name }}</span>
                         <span class="trait-value {% if trait.value > 0 %}positive{% elif trait.value < 0 %}negative{% endif %}">
@@ -116,9 +117,24 @@
                     </div>
                     {% endfor %}
                 </div>
+                {% endif %}
+            
+                {% if memory.secondary_trait_additions %}
+                <h4>New Secondary Traits</h4>
+                <div class="trait-changes">
+                    {% for trait in memory.secondary_trait_additions %}
+                    <div class="trait-change">
+                        <span class="trait-name">{{ trait.name }}</span>
+                        <span class="trait-value positive">
+                            Base value: {{ trait.value }}
+                        </span>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% endif %}
             </div>
             {% endif %}
-
+            
             {% if characters %}
             <div class="impact-section">
                 <h4>People Involved</h4>

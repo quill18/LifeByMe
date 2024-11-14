@@ -51,7 +51,8 @@ class Memory:
     context_tags: List[str]
     story_tags: List[str]
     primary_trait_impacts: List[Trait]
-    secondary_trait_impacts: List[Trait]
+    secondary_trait_modifications: List[Trait]  # Changes to existing traits
+    secondary_trait_additions: List[Trait]      # New traits to add
     life_stage: LifeStage
     age_experienced: int
     impact_explanation: str
@@ -85,7 +86,8 @@ class Memory:
             'context_tags': self.context_tags,
             'story_tags': self.story_tags,
             'primary_trait_impacts': [trait.to_dict() for trait in self.primary_trait_impacts],
-            'secondary_trait_impacts': [trait.to_dict() for trait in self.secondary_trait_impacts],
+            'secondary_trait_modifications': [trait.to_dict() for trait in self.secondary_trait_modifications],
+            'secondary_trait_additions': [trait.to_dict() for trait in self.secondary_trait_additions],
             'life_stage': self.life_stage.value if hasattr(self.life_stage, 'value') else self.life_stage,
             'age_experienced': self.age_experienced,
             'impact_explanation': self.impact_explanation,
@@ -116,7 +118,8 @@ class Memory:
             context_tags=data['context_tags'],
             story_tags=data['story_tags'],
             primary_trait_impacts=[Trait.from_dict(t) for t in data['primary_trait_impacts']],
-            secondary_trait_impacts=[Trait.from_dict(t) for t in data['secondary_trait_impacts']],
+            secondary_trait_modifications=[Trait.from_dict(t) for t in data.get('secondary_trait_modifications', [])],
+            secondary_trait_additions=[Trait.from_dict(t) for t in data.get('secondary_trait_additions', [])],
             life_stage=data['life_stage'],
             age_experienced=data['age_experienced'],
             impact_explanation=data['impact_explanation'],

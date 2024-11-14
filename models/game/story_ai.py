@@ -34,7 +34,7 @@ def begin_story(life: 'life_module.Life', custom_story_seed: str) -> ai_utils.St
             {"role": "system", "content": prompt},
             {"role": "user", "content": "Begin a new story for this character."}
         ],
-        tools=tools.STORY_TOOLS,
+        tools=tools.STORY_TOOLS_WITH_OPTIONS,
         tool_choice={"type": "function", "function": {"name": "create_story_beat"}}
     )
     
@@ -81,7 +81,7 @@ Player chose: {selected_option}
 
 Continue the story based on this choice."""}
         ],
-        tools=tools.STORY_TOOLS,
+        tools=tools.STORY_TOOLS_WITH_OPTIONS,
         tool_choice={"type": "function", "function": {"name": "create_story_beat"}}
     )
     

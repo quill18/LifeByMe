@@ -14,7 +14,7 @@
         
         <div class="form-group">
             <label for="name">Name</label>
-            <input type="text" id="name" name="name" maxlength="50" required
+            <input type="text" id="name" name="name" maxlength="50" autocomplete="off" required
                    value="{{ form_data.name if form_data else '' }}">
             <div class="character-count"><span id="nameCount">{{ form_data.name|length if form_data else 0 }}</span>/50</div>
         </div>

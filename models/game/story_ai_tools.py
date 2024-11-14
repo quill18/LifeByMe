@@ -1,11 +1,11 @@
 # ./models/game/story_ai_tools.py
 
-# Tool definition for story generation
+# Base story tools without options
 STORY_TOOLS = [{
     "type": "function",
     "function": {
         "name": "create_story_beat",
-        "description": "Create a story beat with text and response options",
+        "description": "Create a story beat with text",
         "parameters": {
             "type": "object",
             "properties": {
@@ -13,19 +13,36 @@ STORY_TOOLS = [{
                     "type": "string",
                     "description": "The narrative text describing what happens in this story beat"
                 },
-                "options": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    },
-                    "description": "List of 4 response options if the story continues, empty if this is the conclusion"
-                },
                 "character_ids": {
                     "type": "array",
                     "items": {
                         "type": "string"
                     },
                     "description": "List of character IDs for characters who appear in this story, chosen from the list of Available Characters"
+                }
+            },
+            "required": ["story_text", "character_ids"]
+        }
+    }
+}]
+
+# Extended version with options
+STORY_TOOLS_WITH_OPTIONS = [{
+    "type": "function",
+    "function": {
+        **STORY_TOOLS[0]["function"],  # Copy base function properties
+        "parameters": {
+            "type": "object",
+            "properties": {
+                **STORY_TOOLS[0]["function"]["parameters"]["properties"],  # Copy base properties
+                "options": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "description": "List of exactly 4 response options for how the story continues",
+                    "minItems": 4,
+                    "maxItems": 4
                 }
             },
             "required": ["story_text", "options", "character_ids"]
@@ -124,16 +141,36 @@ MEMORY_TOOLS = [{
                     "description": "Brief explanation of why the memory is important and permanent (or not)"
                 },
                 "secondary_trait_changes": {
-                    "type": "array",
-                    "description": "Changes to secondary traits and/or skills - or the creation of a completely new secondary trait",
-                    "items": {
-                        "type": "object",
-                        "properties": {
-                            "name": {"type": "string"},
-                            "value": {"type": "integer", "minimum": -20, "maximum": 20}
+                    "type": "object",
+                    "properties": {
+                        "modifications": {
+                            "type": "array",
+                            "description": "Changes to existing secondary traits (up to 2)",
+                            "items": {
+                                "type": "object",
+                                "properties": {
+                                    "name": {"type": "string"},
+                                    "value": {"type": "integer", "minimum": -20, "maximum": 20}
+                                },
+                                "required": ["name", "value"]
+                            },
+                            "maxItems": 2
                         },
-                        "required": ["name", "value"]
-                    }
+                        "additions": {
+                            "type": "array",
+                            "description": "New secondary traits to create (up to 1)",
+                            "items": {
+                                "type": "object",
+                                "properties": {
+                                    "name": {"type": "string"},
+                                    "value": {"type": "integer", "minimum": 0, "maximum": 20}
+                                },
+                                "required": ["name", "value"]
+                            },
+                            "maxItems": 1
+                        }
+                    },
+                    "required": []
                 },
                 "character_changes": {
                     "type": "array",

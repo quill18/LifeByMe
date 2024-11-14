@@ -249,6 +249,17 @@ def new_life():
         db_session = Session.get_by_session_id(session['session_id'])
         db_session.update_current_life(life._id)
         
+        # Create initial story
+        first_day_seed = (f"This is {life.name}'s first day at Quillington High School. "
+                         f"They and their family have just moved to town over the summer. "
+                         f"{life.name} doesn't know anyone at school yet. "
+                         f"This story should focus on the nerves and excitement that accompany such an event, and introduce {life.name} to one or two characters.")
+        try:
+            new_seeded_story(life, first_day_seed)
+        except Exception as e:
+            logger.error(f"Error creating initial story: {str(e)}")
+            # Continue anyway - not having an initial story isn't catastrophic
+        
         logger.info(f"Created new life '{life.name}' for user {user.username}")
         return redirect(url_for('game.game'))
         
@@ -258,6 +269,25 @@ def new_life():
                              errors=['An error occurred while creating your new life'],
                              form_data=form_data,
                              csrf_token=generate_csrf())
+
+
+
+def new_seeded_story(life: 'Life', custom_story_seed: str = "") -> 'Story':
+    """Generate and save a new story with an optional seed"""
+    # Get story beginning with custom seed
+    story_response = begin_story(life, custom_story_seed)
+
+    # Create new story object
+    story = Story(
+        life_id=life._id,
+        prompt=story_response.prompt,
+        beats=[(story_response.story_text, None)],
+        current_options=story_response.options,
+        character_ids=story_response.character_ids
+    )
+    story.save()
+    
+    return story
 
 @game_bp.route('/game/new_story', methods=['POST'])
 @login_required
@@ -281,18 +311,8 @@ def new_story():
         data = request.get_json() or {}
         custom_story_seed = data.get('custom_story_seed', '').strip()
 
-        # Get story beginning with custom seed
-        story_response = begin_story(current_life, custom_story_seed)
-
-        # Create new story object
-        story = Story(
-            life_id=current_life._id,
-            prompt=story_response.prompt,
-            beats=[(story_response.story_text, None)],
-            current_options=story_response.options,
-            character_ids=story_response.character_ids
-        )
-        story.save()
+        # Create the new story
+        story = new_seeded_story(current_life, custom_story_seed)
 
         # Return rendered partial template
         return render_template('game/partials/story.html', 
@@ -440,9 +460,13 @@ def make_memory(story_id):
                 Trait(t['name'], t['value']) 
                 for t in memory_data.get('primary_trait_changes', [])
             ],
-            secondary_trait_impacts=[
+            secondary_trait_modifications=[
                 Trait(t['name'], t['value']) 
-                for t in memory_data.get('secondary_trait_changes', [])
+                for t in memory_data.get('secondary_trait_changes', {}).get('modifications', [])
+            ],
+            secondary_trait_additions=[
+                Trait(t['name'], t['value']) 
+                for t in memory_data.get('secondary_trait_changes', {}).get('additions', [])
             ],
             life_stage=current_life.life_stage,
             age_experienced=current_life.age,

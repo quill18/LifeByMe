@@ -15,14 +15,22 @@ def build_character_summary(life: 'life_module.Life') -> str:
     """Create a concise character summary for the AI"""
     gender_desc = life.custom_gender if life.gender == "Custom" else life.gender
     
-    # Format traits with more detail and explicit values
-    traits_desc = []
+    # Format primary traits with more detail and explicit values
+    primary_traits_desc = []
     for trait in life.primary_traits:
         interpretation = "very low" if trait.value < 20 else \
                         "low" if trait.value < 40 else \
                         "average" if trait.value < 60 else \
                         "high" if trait.value < 80 else "very high"
-        traits_desc.append(f"{trait.name}: {trait.value}/100 ({interpretation})")
+        primary_traits_desc.append(f"{trait.name}: {trait.value}/100 ({interpretation})")
+    
+    # Format secondary traits - sort by value to emphasize strongest traits
+    secondary_traits = sorted(life.secondary_traits, key=lambda t: abs(t.value), reverse=True)
+    secondary_traits_desc = []
+    for trait in secondary_traits:
+        # Only include traits with non-zero values
+        if trait.value != 0:
+            secondary_traits_desc.append(f"{trait.name}: {trait.value}/100")
     
     # Build the summary parts
     summary_parts = [
@@ -34,9 +42,13 @@ def build_character_summary(life: 'life_module.Life') -> str:
         "Primary Traits:"
     ]
     
-    # Add traits if they exist
-    if traits_desc:
-        summary_parts.extend(f"- {trait}" for trait in traits_desc)
+    # Add primary traits
+    summary_parts.extend(f"- {trait}" for trait in primary_traits_desc)
+    
+    # Add secondary traits if any exist
+    if secondary_traits_desc:
+        summary_parts.append("Secondary Traits:")
+        summary_parts.extend(f"- {trait}" for trait in secondary_traits_desc)
     
     # Add stress level
     summary_parts.append(f"Current stress level: {life.current_stress}%")
@@ -73,13 +85,13 @@ def build_intensity_guidelines(intensity: Intensity, difficulty: Difficulty) -> 
 
 def build_stress_guidelines(life: 'life_module.Life') -> str:
     if(life.current_stress > 80):
-        return f"   - {life.name} is currently extremely stressed ({life.curren_stress}/100), which makes challenges extremely dramatic. Consider offering options that represent a 'mental breakdown' inline with a character's traits that might provide a large stress relief even at the cost of a negative outcome to the story. (e.g. a high school student deciding to blow off studying for an exam to play video games instead)"
+        return f"   - {life.name} is currently extremely stressed ({life.current_stress}/100), which makes challenges extremely dramatic. Consider offering options that represent a 'mental breakdown' inline with a character's traits that might provide a large stress relief even at the cost of a negative outcome to the story. (e.g. a high school student deciding to blow off studying for an exam to play video games instead)"
     elif(life.current_stress > 60):
-        return f"   - {life.name} is currently moderately stressed ({life.curren_stress}/100), which makes challenges more dramatic. Consider offering one or two options that give the player a change to 'blow off steam' and relax, possibly at a cost of ignoring responsibilities."
+        return f"   - {life.name} is currently moderately stressed ({life.current_stress}/100), which makes challenges more dramatic. Consider offering one or two options that give the player a change to 'blow off steam' and relax, possibly at a cost of ignoring responsibilities."
     elif(life.current_stress < 30):
-        return f"   - {life.name} is currently barely stressed ({life.curren_stress}/100). Consider offering an to the player that will be more bold and daring, representing a reduced anxiety. An option that represents more diligence and attention to detail could also be appropriate."
+        return f"   - {life.name} is currently barely stressed ({life.current_stress}/100). Consider offering an to the player that will be more bold and daring, representing a reduced anxiety. An option that represents more diligence and attention to detail could also be appropriate."
     
-    return "   - {life.name} is currently experiencing average stress ({life.curren_stress}/100) levels."
+    return "   - {life.name} is currently experiencing average stress ({life.current_stress}/100) levels."
     
 
 

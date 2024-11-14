@@ -1794,3 +1794,42 @@ button:disabled {
     border-color: var(--primary-color);
     box-shadow: 0 0 0 2px rgba(74, 144, 226, 0.2);
 }
+.impact-section + .impact-section {
+    margin-top: 1.5rem;
+}
+
+.trait-changes {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+}
+
+.trait-change {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.75rem;
+    background-color: var(--light-gray);
+    border-radius: 4px;
+}
+
+.trait-change .trait-name {
+    font-weight: 500;
+}
+
+.trait-value {
+    font-family: monospace;
+    padding: 0.25rem 0.5rem;
+    border-radius: 3px;
+}
+
+.trait-value.positive {
+    background-color: #e8f5e9;
+    color: var(--success-color);
+}
+
+.trait-value.negative {
+    background-color: #ffebee;
+    color: var(--danger-color);
+}
