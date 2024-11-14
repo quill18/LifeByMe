@@ -1,29 +1,15 @@
 // ./static/js/game.js
 
-document.addEventListener('DOMContentLoaded', () => {
-    const centerColumn = document.querySelector('.center-column');
-
-    // Scroll the story area to the bottom
+// Initialize story scroll functionality
+function initializeStoryScroll() {
     const storyScroll = document.querySelector('.story-scroll');
     if (storyScroll) {
         storyScroll.scrollTop = storyScroll.scrollHeight;
     }
-    
-    // Handle all button clicks in the game area
-    document.addEventListener('click', async (e) => {
-        // Start New Story button
-        if (e.target.matches('.start-story-button, .story-complete .new-story-button')) {
-            e.preventDefault();
-            await handleNewStory();
-        }
-        
-        // Story option buttons
-        if (e.target.matches('.story-option')) {
-            await handleStoryChoice(e.target);
-        }
-    });
+}
 
-    // Customize story toggle
+// Initialize customize story form
+function initializeCustomizeForm() {
     const customizeToggle = document.querySelector('.customize-toggle');
     const customizeForm = document.querySelector('.customize-form');
     
@@ -34,155 +20,10 @@ document.addEventListener('DOMContentLoaded', () => {
             customizeToggle.textContent = customizeForm.style.display === 'none' ? '⚙ Customize' : '✕ Hide';
         });
     }
+}
 
-    
-    async function handleStoryChoice(optionButton) {
-        try {
-            // Disable all option buttons to prevent double-clicks
-            const allOptions = document.querySelectorAll('.story-option');
-            allOptions.forEach(button => {
-                button.disabled = true;
-                button.classList.add('disabled');
-            });
-
-            // Show loading state below the options
-            const loadingDiv = document.createElement('div');
-            loadingDiv.className = 'loading';
-            loadingDiv.textContent = 'Processing your choice...';
-            optionButton.parentElement.after(loadingDiv);
-
-            const token = CSRFToken.getToken();
-            if (!token) {
-                throw new Error('CSRF token not found');
-            }
-
-            // Get the option index from the button
-            const optionIndex = optionButton.dataset.option;
-
-            // Make API call
-            const response = await fetch('/game/story/choose', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRFToken': token
-                },
-                body: JSON.stringify({
-                    option_index: optionIndex
-                })
-            });
-
-            if (!response.ok) {
-                const errorData = await response.json();
-                throw new Error(errorData.error || 'Failed to process choice');
-            }
-
-            // Replace story content with new HTML
-            const htmlContent = await response.text();
-            centerColumn.innerHTML = htmlContent;
-
-            // Scroll the story area to the bottom
-            const storyScroll = document.querySelector('.story-scroll');
-            if (storyScroll) {
-                storyScroll.scrollTop = storyScroll.scrollHeight;
-            }
-
-        } catch (error) {
-            console.error('Error processing choice:', error);
-            // Re-enable buttons in case of error
-            const allOptions = document.querySelectorAll('.story-option');
-            allOptions.forEach(button => {
-                button.disabled = false;
-                button.classList.remove('disabled');
-            });
-
-            // Show error message
-            const errorDiv = document.createElement('div');
-            errorDiv.className = 'error-message';
-            errorDiv.innerHTML = `
-                ${error.message}
-                <button class="button primary" onclick="location.reload()">
-                    Try Again
-                </button>
-            `;
-            centerColumn.appendChild(errorDiv);
-        }
-    }
-});
-
-document.addEventListener('click', async (e) => {
-    // Delete story button
-    if (e.target.matches('.delete-story-button')) {
-        if (!confirm('Are you sure you want to delete this story? This cannot be undone.')) {
-            return;
-        }
-        
-        const storyId = e.target.dataset.storyId;
-        try {
-            const response = await fetch(`/game/story/delete/${storyId}`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRFToken': CSRFToken.getToken()
-                }
-            });
-            
-            if (!response.ok) {
-                throw new Error('Failed to delete story');
-            }
-            
-            // Refresh the game page
-            location.reload();
-            
-        } catch (error) {
-            console.error('Error:', error);
-            alert('Error deleting story. Please try again.');
-        }
-    }
-    
-    // Make memory button
-    if (e.target.matches('.make-memory-button')) {
-        const storyId = e.target.dataset.storyId;
-        const buttonContainer = e.target.parentElement;
-        
-        // Show loading state
-        buttonContainer.innerHTML = '<div class="loading">Creating memory...</div>';
-        
-        try {
-            const response = await fetch(`/game/story/make_memory/${storyId}`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRFToken': CSRFToken.getToken()
-                }
-            });
-            
-            if (!response.ok) {
-                throw new Error('Failed to create memory');
-            }
-            
-            const data = await response.json();
-            if (data.redirect) {
-                window.location.href = data.redirect;
-            } else {
-                location.reload();
-            }
-            
-        } catch (error) {
-            console.error('Error:', error);
-            buttonContainer.innerHTML = `
-                <div class="error-message">
-                    Error creating memory. Please try again.
-                    <button class="button primary" onclick="location.reload()">
-                        Refresh
-                    </button>
-                </div>`;
-        }
-    }
-});
-
-
-document.addEventListener('DOMContentLoaded', () => {
-    // Panel functionality
+// Initialize sliding panels functionality
+function initializePanels() {
     const actionButtons = document.querySelectorAll('.action-button');
     const panels = document.querySelectorAll('.slide-panel');
     const closeButtons = document.querySelectorAll('.close-panel');
@@ -197,51 +38,221 @@ document.addEventListener('DOMContentLoaded', () => {
         overlay.classList.remove('active');
     }
     
-    // Handle action button clicks
+    // Setup action buttons
     actionButtons.forEach(button => {
         button.addEventListener('click', () => {
             const panelId = `${button.dataset.panel}-panel`;
             const panel = document.getElementById(panelId);
             
-            // Close any open panels first
             closeAllPanels();
             
-            // Open the selected panel
             if (panel) {
                 panel.classList.add('active');
                 overlay.classList.add('active');
                 
-                // Load the appropriate content
                 switch (button.dataset.panel) {
-                    case 'traits':
-                        loadTraits();
-                        break;
-                    case 'memories':
-                        loadMemories();
-                        break;
-                    case 'characters':
-                        loadCharacters();
-                        break;
+                    case 'traits': loadTraits(); break;
+                    case 'memories': loadMemories(); break;
+                    case 'characters': loadCharacters(); break;
                 }
             }
         });
     });
     
-    // Handle close button clicks
-    closeButtons.forEach(button => {
-        button.addEventListener('click', closeAllPanels);
-    });
-    
-    // Handle overlay clicks
+    // Setup close buttons
+    closeButtons.forEach(button => button.addEventListener('click', closeAllPanels));
     overlay.addEventListener('click', closeAllPanels);
     
-    // Handle escape key
+    // Setup escape key handler
     document.addEventListener('keydown', (e) => {
-        if (e.key === 'Escape') {
-            closeAllPanels();
+        if (e.key === 'Escape') closeAllPanels();
+    });
+}
+
+// Initialize story control buttons
+function initializeStoryControls() {
+    const centerColumn = document.querySelector('.center-column');
+    if (!centerColumn) return;
+
+    // Use event delegation for story controls
+    centerColumn.addEventListener('click', async (e) => {
+        // Handle Start/New Story button
+        if (e.target.matches('.start-story-button, .story-complete .new-story-button')) {
+            e.preventDefault();
+            await handleNewStory();
+        }
+        
+        // Handle Story option buttons
+        if (e.target.matches('.story-option')) {
+            await handleStoryChoice(e.target);
         }
     });
+}
+
+// Story management functions
+async function deleteStory(storyId) {
+    try {
+        const response = await fetch(`/game/story/delete/${storyId}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': CSRFToken.getToken()
+            }
+        });
+        
+        if (!response.ok) {
+            throw new Error('Failed to delete story');
+        }
+        
+        location.reload();
+        
+    } catch (error) {
+        console.error('Error:', error);
+        alert('Error deleting story. Please try again.');
+    }
+}
+
+async function makeMemory(storyId, buttonContainer) {
+    buttonContainer.innerHTML = '<div class="loading">Creating memory...</div>';
+    
+    try {
+        const response = await fetch(`/game/story/make_memory/${storyId}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': CSRFToken.getToken()
+            }
+        });
+        
+        if (!response.ok) {
+            throw new Error('Failed to create memory');
+        }
+        
+        const data = await response.json();
+        if (data.redirect) {
+            window.location.href = data.redirect;
+        } else {
+            location.reload();
+        }
+        
+    } catch (error) {
+        console.error('Error:', error);
+        buttonContainer.innerHTML = `
+            <div class="error-message">
+                Error creating memory. Please try again.
+                <button class="button primary" onclick="location.reload()">
+                    Refresh
+                </button>
+            </div>`;
+    }
+}
+
+// Initialize story management buttons
+function initializeStoryManagement() {
+    const centerColumn = document.querySelector('.center-column');
+    if (!centerColumn) return;
+
+    // Use event delegation for story management buttons
+    centerColumn.addEventListener('click', async (e) => {
+        // Handle Delete Story button
+        if (e.target.matches('.delete-story-button')) {
+            if (!confirm('Are you sure you want to delete this story? This cannot be undone.')) {
+                return;
+            }
+            await deleteStory(e.target.dataset.storyId);
+        }
+
+        // Handle Make Memory button
+        if (e.target.matches('.make-memory-button')) {
+            await makeMemory(e.target.dataset.storyId, e.target.parentElement);
+        }
+    });
+}
+
+// Main initialization
+document.addEventListener('DOMContentLoaded', () => {
+    initializeStoryScroll();
+    initializeCustomizeForm();
+    initializePanels();
+    initializeStoryControls();
+    initializeStoryManagement();
+    StoryCustomization.initialize();
 });
+
+async function handleStoryChoice(optionButton) {
+    const centerColumn = document.querySelector('.center-column');
+    if (!centerColumn) return;
+
+    try {
+        // Disable all option buttons to prevent double-clicks
+        const allOptions = document.querySelectorAll('.story-option');
+        allOptions.forEach(button => {
+            button.disabled = true;
+            button.classList.add('disabled');
+        });
+
+        // Show loading state below the options
+        const loadingDiv = document.createElement('div');
+        loadingDiv.className = 'loading';
+        loadingDiv.textContent = 'Processing your choice...';
+        optionButton.parentElement.after(loadingDiv);
+
+        const token = CSRFToken.getToken();
+        if (!token) {
+            throw new Error('CSRF token not found');
+        }
+
+        // Get the option index from the button
+        const optionIndex = optionButton.dataset.option;
+
+        // Make API call
+        const response = await fetch('/game/story/choose', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': token
+            },
+            body: JSON.stringify({
+                option_index: optionIndex
+            })
+        });
+
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.error || 'Failed to process choice');
+        }
+
+        // Replace story content with new HTML
+        const htmlContent = await response.text();
+        centerColumn.innerHTML = htmlContent;
+
+        // Scroll the story area to the bottom
+        const storyScroll = document.querySelector('.story-scroll');
+        if (storyScroll) {
+            storyScroll.scrollTop = storyScroll.scrollHeight;
+        }
+
+    } catch (error) {
+        console.error('Error processing choice:', error);
+        // Re-enable buttons in case of error
+        const allOptions = document.querySelectorAll('.story-option');
+        allOptions.forEach(button => {
+            button.disabled = false;
+            button.classList.remove('disabled');
+        });
+
+        // Show error message
+        const errorDiv = document.createElement('div');
+        errorDiv.className = 'error-message';
+        errorDiv.innerHTML = `
+            ${error.message}
+            <button class="button primary" onclick="location.reload()">
+                Try Again
+            </button>
+        `;
+        centerColumn.appendChild(errorDiv);
+    }
+}
 
 // Panel content loading functions
 async function loadTraits() {
@@ -377,15 +388,14 @@ async function handleNewStory() {
             throw new Error('CSRF token not found');
         }
 
-        // Get customization options
-        const focusCharacter = document.getElementById('focusCharacter')?.value;
-        const storyTheme = document.getElementById('storyTheme')?.value;
+        // Get custom story seed
+        const customSeed = document.getElementById('customStorySeed')?.value.trim() || '';
         
         // Show loading state
         const centerColumn = document.querySelector('.center-column');
         centerColumn.innerHTML = '<div class="loading">Starting new story...</div>';
         
-        // Make API call with customization options
+        // Make API call with custom seed
         const response = await fetch('/game/new_story', {
             method: 'POST',
             headers: {
@@ -393,8 +403,7 @@ async function handleNewStory() {
                 'X-CSRFToken': token
             },
             body: JSON.stringify({
-                focus_character: focusCharacter || null,
-                story_theme: storyTheme || null
+                custom_story_seed: customSeed
             })
         });
         
@@ -424,4 +433,70 @@ async function handleNewStory() {
             </div>`;
     }
 }
+
     
+// Story Customization Functions
+const StoryCustomization = {
+    state: {
+        hasUserModifiedSeed: false,
+    },
+
+    buildStorySeed() {
+        const focusCharacter = document.getElementById('focusCharacter');
+        const storyTheme = document.getElementById('storyTheme');
+        const customSeed = [];
+        
+        if (focusCharacter?.value) {
+            const characterName = focusCharacter.options[focusCharacter.selectedIndex].text;
+            customSeed.push(`Make sure this story focuses on ${characterName}.`);
+        }
+        
+        if (storyTheme?.value) {
+            customSeed.push(`Make sure this story focuses on a theme of ${storyTheme.value}.`);
+        }
+        
+        return customSeed.join('\n');
+    },
+
+    warnUserAboutOverwrite() {
+        return confirm('You have manually edited the story seed. Using the dropdowns will overwrite your changes. Continue?');
+    },
+
+    handleDropdownChange(event) {
+        const seedTextarea = document.getElementById('customStorySeed');
+        if (!seedTextarea) return;
+
+        if (this.state.hasUserModifiedSeed && seedTextarea.value.trim()) {
+            if (!this.warnUserAboutOverwrite()) {
+                // Reset the dropdown to its previous value
+                event.target.value = '';
+                return;
+            }
+        }
+
+        seedTextarea.value = this.buildStorySeed();
+        this.state.hasUserModifiedSeed = false;
+    },
+
+    handleSeedInput() {
+        this.state.hasUserModifiedSeed = true;
+    },
+
+    initialize() {
+        const focusCharacter = document.getElementById('focusCharacter');
+        const storyTheme = document.getElementById('storyTheme');
+        const customSeed = document.getElementById('customStorySeed');
+        
+        if (focusCharacter) {
+            focusCharacter.addEventListener('change', (e) => this.handleDropdownChange(e));
+        }
+        
+        if (storyTheme) {
+            storyTheme.addEventListener('change', (e) => this.handleDropdownChange(e));
+        }
+        
+        if (customSeed) {
+            customSeed.addEventListener('input', () => this.handleSeedInput());
+        }
+    }
+};

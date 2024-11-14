@@ -86,7 +86,7 @@ class Memory:
             'story_tags': self.story_tags,
             'primary_trait_impacts': [trait.to_dict() for trait in self.primary_trait_impacts],
             'secondary_trait_impacts': [trait.to_dict() for trait in self.secondary_trait_impacts],
-            'life_stage': self.life_stage.value,
+            'life_stage': self.life_stage.value if hasattr(self.life_stage, 'value') else self.life_stage,
             'age_experienced': self.age_experienced,
             'impact_explanation': self.impact_explanation,
             'analyzed_traits': [trait.to_dict() for trait in self.analyzed_traits],

@@ -277,37 +277,12 @@ def new_story():
         if existing_story and not existing_story.completed:
             return jsonify({'error': 'There is already an active story'}), 400
 
-        # Get customization options from request
+        # Get data from request
         data = request.get_json() or {}
-        focus_character_id = data.get('focus_character')
-        story_theme = data.get('story_theme')
-
-        # Build custom story seed based on options
-        custom_story_seed = []
-        
-        # Handle first story differently
-        story_count = stories.count_documents({'life_id': current_life._id})
-        if story_count == 0:
-            custom_story_seed.append(
-                f"This is {current_life.name}'s first day at Quillington High School. "
-                "They and their family have just moved to town over the summer. {current_life.name} doesn't know anyone at school yet"
-                "This story should focus on the nerves and excitement that accompany such an event."
-            )
-        
-        # Add character focus if specified
-        if focus_character_id:
-            character = Character.get_by_id(ObjectId(focus_character_id))
-            if character:
-                custom_story_seed.append(f"Make sure this story focuses on {character.name}.")
-
-        # Add theme focus if specified
-        if story_theme:
-            custom_story_seed.append(f"Make sure this story focuses on a theme of {story_theme}.")
-
-        print(f"custom_story_seed: {custom_story_seed}")
+        custom_story_seed = data.get('custom_story_seed', '').strip()
 
         # Get story beginning with custom seed
-        story_response = begin_story(current_life, " ".join(custom_story_seed))
+        story_response = begin_story(current_life, custom_story_seed)
 
         # Create new story object
         story = Story(
@@ -330,7 +305,6 @@ def new_story():
         logger.error(f"Error creating new story: {str(e)}\n{traceback.format_exc()}")
         return jsonify({'error': str(e)}), 500
     
-
 @game_bp.route('/game/story/choose', methods=['POST'])
 @login_required
 def choose_option():

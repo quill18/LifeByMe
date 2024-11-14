@@ -1771,3 +1771,26 @@ button:disabled {
         gap: 0.25rem;
     }
 }
+
+/* Custom Story Seed Textarea */
+#customStorySeed {
+    width: 100%;
+    padding: 0.75rem;
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    resize: vertical;
+    min-height: 80px;
+    font-family: var(--font-main);
+    margin-top: 0.5rem;
+}
+
+#customStorySeed::placeholder {
+    color: var(--secondary-color);
+    opacity: 0.7;
+}
+
+#customStorySeed:focus {
+    outline: none;
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 2px rgba(74, 144, 226, 0.2);
+}
