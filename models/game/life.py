@@ -43,7 +43,7 @@ class Life:
     secondary_traits: List[Trait]
     current_stress: int = 0  # 0-100
     current_season: Season = Season.AUTUMN
-    current_year: int = 1995
+    current_year: int = 1
     stories_this_season: int = 0
     created_at: datetime = field(default_factory=datetime.utcnow)
     last_played: datetime = field(default_factory=datetime.utcnow)
@@ -92,7 +92,7 @@ class Life:
             secondary_traits=[Trait.from_dict(t) for t in data['secondary_traits']],
             current_stress=data.get('current_stress', 0),
             current_season=Season(data.get('current_season', 'Autumn')),
-            current_year=data.get('current_year', 1995),
+            current_year=data.get('current_year', 1),
             stories_this_season=data.get('stories_this_season', 0),
             created_at=data.get('created_at', datetime.utcnow()),
             last_played=data.get('last_played', datetime.utcnow()),

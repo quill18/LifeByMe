@@ -70,17 +70,31 @@ def build_intensity_guidelines(intensity: Intensity, difficulty: Difficulty) -> 
 
     return intensity_text
 
+def build_stress_guidelines(life: 'life_module.Life') -> str:
+    if(life.current_stress > 80):
+        return f"   - {life.name} is currently extremely stressed ({life.curren_stress}/100), which makes challenges extremely dramatic. Consider offering options that represent a 'mental breakdown' inline with a character's traits that might provide a large stress relief even at the cost of a negative outcome to the story. (e.g. a high school student deciding to blow off studying for an exam to play video games instead)"
+    elif(life.current_stress > 60):
+        return f"   - {life.name} is currently moderately stressed ({life.curren_stress}/100), which makes challenges more dramatic. Consider offering one or two options that give the player a change to 'blow off steam' and relax, possibly at a cost of ignoring responsibilities."
+    elif(life.current_stress < 30):
+        return f"   - {life.name} is currently barely stressed ({life.curren_stress}/100). Consider offering an to the player that will be more bold and daring, representing a reduced anxiety. An option that represents more diligence and attention to detail could also be appropriate."
+    
+    return "   - {life.name} is currently experiencing average stress ({life.curren_stress}/100) levels."
+    
+
+
 
 def build_base_prompt(life: 'life_module.Life') -> str:
     """Build the base system prompt for all story interactions"""
     character_summary = build_character_summary(life)
     intensity_guidelines = build_intensity_guidelines(life.intensity, life.difficulty)
     memories_json = memory_module.Memory.format_memories_for_ai(life._id)
+    stress_guidelines = build_stress_guidelines(life)
     
     return templates.BASE_PROMPT_TEMPLATE.format(
         character_summary=character_summary,
         intensity_guidelines=intensity_guidelines,
         memories_json=memories_json,
+        stress_guidelines=stress_guidelines,
         name=life.name,
         season_and_year=f"{life.current_season} {life.current_year}"
     )
