@@ -1,23 +1,13 @@
 document.addEventListener('DOMContentLoaded', () => {
     const customDirectionsExamples = [
-        "I want a life with supernatural elements and magic.",
-        "I'm secretly a vampire. I have a ring that protects me from the sun.",
-        "Weird and strange things happen all the time in my town.",
-        "My life is a soap opera, filled with ridiculous and over-the-top drama.",
-        "I want a life with a heavy focus on romance.",
-        "My character comes from a devout Muslim family.",
-        "My family and I just moved from Japan. It's my first time in America.",
-        "My character struggles with social anxiety.",
-        "My character is passionate about environmental activism.",
-        "My character is interested in politics and social justice.",
-        "My character is deeply involved in their local theater community.",
-        "My character is passionate about technology and innovation.",
-        "I want to become a renowned chef and explore culinary arts.",
-        "I want to start very poor but become rich by my 30's.",
-        "I want to focus on sports and athletic achievement.",
-        "I want to explore artistic expression and creativity.",
-        "I want to focus on family relationships and dynamics.",
-        "I want to become a famous musician and deal with celebrity life.",
+        "This world is filled with with supernatural elements and magic. [______] is a witch just learning to use their power.",
+        "[______] is secretly an alien from another galaxy. They have to keep it secret from everyone!",
+        "Weird and strange things happen all the time in this world and no one can explain why.",
+        "This world is a soap opera, filled with ridiculous and over-the-top drama. The crazier the drama, the better!",
+        "This world is all about romance, romance, romance!",
+        "[______] comes from a very rich family, but tries to hide it.",
+        "[______] comes from a devout Muslim family as is finding it difficult to balance their life.",
+        "[______] and their family moved here from Japan not very long ago.",
     ];
 
     // Form elements

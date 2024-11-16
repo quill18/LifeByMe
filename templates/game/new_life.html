@@ -80,9 +80,9 @@
         </div>
         
         <div class="form-group">
-            <label for="customDirections">Custom Directions (Optional)</label>
-            <textarea id="customDirections" name="custom_directions" maxlength="250" rows="3">{{ form_data.custom_directions if form_data else '' }}</textarea>
-            <div class="character-count"><span id="directionsCount">{{ form_data.custom_directions|length if form_data else 0 }}</span>/250</div>
+            <label for="customDirections">Custom Directions (Optional) - Use this to give a global instruction to shape the world</label>
+            <textarea id="customDirections" name="custom_directions" maxlength="1000" rows="3">{{ form_data.custom_directions if form_data else '' }}</textarea>
+            <div class="character-count"><span id="directionsCount">{{ form_data.custom_directions|length if form_data else 0 }}</span>/1000</div>
         </div>
         
 

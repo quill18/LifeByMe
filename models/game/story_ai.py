@@ -176,9 +176,14 @@ Generate a memory based on this story."""}
         tools=tools.MEMORY_TOOLS,
         tool_choice={"type": "function", "function": {"name": "create_memory"}}
     )
+
+    print(response)
     
     # Parse response
     result = ai_utils.parse_openai_response(response, "create_memory")
+
+    print(result)
+
     
     # Create dictionary of current trait values
     current_traits = {trait.name: trait.value for trait in life.primary_traits}
