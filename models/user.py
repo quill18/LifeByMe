@@ -55,7 +55,7 @@ class User:
     @staticmethod
     def create(username: str, password: str, 
                openai_api_key: Optional[str] = None, 
-               ip_address: Optional[str] = None) -> 'User':
+               ip_address: Optional[str] = None, gpt_model: str = None) -> 'User':
         if len(password) < Config.MIN_PASSWORD_LENGTH:
             raise ValueError(f'Password must be at least {Config.MIN_PASSWORD_LENGTH} characters')
 
@@ -67,7 +67,8 @@ class User:
             username=username,
             password_hash=generate_password_hash(password),
             openai_api_key=openai_api_key if openai_api_key else None,
-            last_login_ip=ip_address
+            last_login_ip=ip_address,
+            gpt_model=gpt_model
         )
         
         try:

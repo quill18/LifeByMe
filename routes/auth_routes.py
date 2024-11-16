@@ -10,6 +10,7 @@ from config import Config  # Add this import
 import logging
 from datetime import datetime
 from typing import List, Optional, Tuple
+import traceback
 
 auth_bp = Blueprint('auth', __name__)
 logger = logging.getLogger(__name__)
@@ -143,6 +144,6 @@ def register():
         errors.append(str(e))
         return render_template('register.html', errors=errors, csrf_token=generate_csrf())
     except Exception as e:
-        logger.error(f"Error during registration: {str(e)}")
+        logger.error(f"Error during registration: {str(e)}\n{traceback.format_exc()}")
         errors.append('An error occurred during registration')
         return render_template('register.html', errors=errors, csrf_token=generate_csrf())
