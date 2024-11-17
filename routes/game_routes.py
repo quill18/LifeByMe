@@ -180,8 +180,6 @@ def validate_new_life_data(form_data) -> Tuple[bool, List[str]]:
     
     # Validate custom directions (optional)
     custom_directions = bleach.clean(form_data.get('custom_directions', '').strip())
-    if custom_directions and len(custom_directions) > 250:
-        errors.append('Custom directions must be 250 characters or less')
     
     return (len(errors) == 0, errors)
 
